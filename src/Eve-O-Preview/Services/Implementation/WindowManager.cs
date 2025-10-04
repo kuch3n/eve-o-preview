@@ -153,6 +153,7 @@ namespace EveOPreview.Services.Implementation
 					Arguments = cmd,
 					UseShellExecute = false,
 					CreateNoWindow = false,
+					RedirectStandardOutput = true
 				};
 				var pathext = System.Environment.GetEnvironmentVariable("PATHEXT");
 				info.EnvironmentVariables["PATHEXT"] = $"{pathext};.";
