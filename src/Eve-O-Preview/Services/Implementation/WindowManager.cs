@@ -153,7 +153,7 @@ namespace EveOPreview.Services.Implementation
 					Arguments = cmd,
 					UseShellExecute = false,
 					CreateNoWindow = false,
-					RedirectStandardOutput = true;
+					RedirectStandardOutput = true
 				};
 
 				using(var proc = new Process())
