@@ -156,7 +156,7 @@ namespace EveOPreview.Services.Implementation
 					RedirectStandardOutput = true
 				};
 
-				using(var proc = new Process())
+				using(var proc = new System.Diagnostics.Process())
 				{
 					proc.StartInfo = info;
 					proc.Start();
