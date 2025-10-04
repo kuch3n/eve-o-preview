@@ -143,18 +143,19 @@ namespace EveOPreview.Services.Implementation
                 } 
                 else 
                 {
-                    cmd = $"/unix /bin/sh -c \"wmctrl -a \"\"" + windowName + "\"\"\"";
+                    cmd = $"-c \"wmctrl -a \"\"" + windowName + "\"\"\"";
                 }
 
 				// Configure and start the process
 				var info = new System.Diagnostics.ProcessStartInfo
 				{
-					FileName = $"start",
+					FileName = "/bin/sh",
 					Arguments = cmd,
 					UseShellExecute = false,
 					CreateNoWindow = false,
-					RedirectStandardOutput = true
 				};
+				var pathext = System.Environment.GetEnvironmentVariable("PATHEXT");
+				info.EnvironmentVariables["PATHEXT"] = $"{pathext};.";
 
 				using(var proc = new System.Diagnostics.Process())
 				{
