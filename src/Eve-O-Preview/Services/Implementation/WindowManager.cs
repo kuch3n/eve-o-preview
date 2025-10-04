@@ -143,21 +143,25 @@ namespace EveOPreview.Services.Implementation
                 } 
                 else 
                 {
-                    cmd = $"-c \"{this._wmctrlLocation}/wmctrl -a \"\"" + windowName + "\"\"\"";
+                    cmd = $"/unix /bin/sh -c \"wmctrl -a \"\"" + windowName + "\"\"\"";
                 }
 
 				// Configure and start the process
-				var processStartInfo = new System.Diagnostics.ProcessStartInfo
+				var info = new System.Diagnostics.ProcessStartInfo
 				{
-					FileName = $"{this._bashLocation}/bash",
+					FileName = $"start",
 					Arguments = cmd,
 					UseShellExecute = false,
-					CreateNoWindow = false
+					CreateNoWindow = false,
+					RedirectStandardOutput = true;
 				};
 
-				using (var process = System.Diagnostics.Process.Start(processStartInfo))
+				using(var proc = new Process())
 				{
-					process.WaitForExit();
+					proc.StartInfo = info;
+					proc.Start();
+					// Wine doesn't implement WindowsAPI to wait or use pipes with CreateProcess, see: https://stackoverflow.com/questions/6004070/execute-shell-commands-from-program-running-in-wine
+					while(proc.StandardOutput.Read() >= 0);	
 				}
 			}
 			catch (Exception ex)
