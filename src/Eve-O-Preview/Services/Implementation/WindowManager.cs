@@ -433,7 +433,7 @@ namespace EveOPreview.Services.Implementation
 
 			Image image = Image.FromHbitmap(bitmap);
 
-			// ToDo: Use DeleteObject as advised by https://learn.microsoft.com/de-de/windows/win32/api/wingdi/nf-wingdi-deleteobject
+			// ToDo: Use DeleteObject as advised by https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-createcompatiblebitmap
 			if (!Gdi32NativeMethods.DeleteDC(bitmap))
 			{
 				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.DeleteDC)} failed");
