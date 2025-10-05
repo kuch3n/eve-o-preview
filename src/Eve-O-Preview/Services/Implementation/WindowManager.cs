@@ -293,7 +293,7 @@ namespace EveOPreview.Services.Implementation
 
 							return;
 						}
-						
+
 						break;
 					case AnimationStyle.NoAnimation:
 						TurnOffAnimation();
@@ -385,7 +385,7 @@ namespace EveOPreview.Services.Implementation
 			}
 
 			IntPtr bitmap = Gdi32NativeMethods.CreateCompatibleBitmap(sourceContext, width, height);
-			if (destContext == IntPtr.Zero)
+			if (bitmap == IntPtr.Zero)
 			{
 				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.CreateCompatibleBitmap)} returned NULL");
 
@@ -393,7 +393,7 @@ namespace EveOPreview.Services.Implementation
 			}
 
 			IntPtr oldBitmap = Gdi32NativeMethods.SelectObject(destContext, bitmap);
-			if (destContext == IntPtr.Zero)
+			if (oldBitmap == IntPtr.Zero)
 			{
 				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.SelectObject)} returned NULL");
 
@@ -433,7 +433,8 @@ namespace EveOPreview.Services.Implementation
 
 			Image image = Image.FromHbitmap(bitmap);
 
-			if(!Gdi32NativeMethods.DeleteDC(bitmap))
+			// ToDo: Use DeleteObject as advied by https://learn.microsoft.com/de-de/windows/win32/api/wingdi/nf-wingdi-deleteobject
+			if (!Gdi32NativeMethods.DeleteDC(bitmap))
 			{
 				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.DeleteDC)} failed");
 
