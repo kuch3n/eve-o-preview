@@ -1,9 +1,10 @@
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace EveOPreview.Services.Interop
 {
-	static class User32NativeMethods
+	internal static class User32NativeMethods
 	{
 		public const uint SPI_SETANIMATION = 0x0049;
 		public const uint SPI_GETANIMATION = 0x0048;
@@ -66,5 +67,13 @@ namespace EveOPreview.Services.Interop
 
 		[DllImport("user32.dll")]
 		public static extern long SystemParametersInfo(long uAction, int lpvParam, ref ANIMATIONINFO uParam, int fuWinIni);
+
+		[DllImport("user32.dll")]
+		extern public static int GetGuiResources(IntPtr hProcess, int uiFlags);
+
+		public static int GetGuiResourcesGDICount()
+		{
+			return GetGuiResources(Process.GetCurrentProcess().Handle, 0);
+    	}
 	}
 }

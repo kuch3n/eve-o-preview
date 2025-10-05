@@ -149,7 +149,7 @@ namespace EveOPreview.Services.Implementation
 				// Configure and start the process
 				var info = new System.Diagnostics.ProcessStartInfo
 				{
-					FileName = "/bin/sh",
+					FileName = "/bin/nohup",
 					Arguments = cmd,
 					UseShellExecute = false,
 					CreateNoWindow = false,
