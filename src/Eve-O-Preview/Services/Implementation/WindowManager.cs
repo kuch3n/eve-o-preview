@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using EveOPreview.Configuration;
 using EveOPreview.Services.Interop;
 
@@ -21,6 +22,8 @@ namespace EveOPreview.Services.Implementation
 		private const string EXCEPTION_DUMP_FILE_NAME = "EVE-O-Preview.log";
 		#endregion
 
+		Timer timer;
+
 
 		public WindowManager(IThumbnailConfiguration configuration)
 		{
@@ -30,11 +33,13 @@ namespace EveOPreview.Services.Implementation
 			this._wmctrlLocation = FindLinuxBinLocation("wmctrl");
 #endif
 			// Composition is always enabled for Windows 8+
-			this.IsCompositionEnabled = 
+			this.IsCompositionEnabled =
 				((Environment.OSVersion.Version.Major == 6) && (Environment.OSVersion.Version.Minor >= 2)) // Win 8 and Win 8.1
 				|| (Environment.OSVersion.Version.Major >= 10) // Win 10
 				|| DwmNativeMethods.DwmIsCompositionEnabled(); // In case of Win 7 an API call is requiredWin 7
 			_animationParam.cbSize = (System.UInt32)Marshal.SizeOf(typeof(ANIMATIONINFO));
+			
+			timer = new Timer(OnTimerEvent, null, 0, 1000);
 		}
 #if LINUX
 		private string FindLinuxBinLocation(string command)
@@ -78,6 +83,13 @@ namespace EveOPreview.Services.Implementation
 		public IntPtr GetForegroundWindowHandle()
 		{
 			return User32NativeMethods.GetForegroundWindow();
+		}
+
+		private void OnTimerEvent(object stateInfo)
+		{
+			var GDIs = User32NativeMethods.GetGuiResourcesGDICount();
+
+			WriteToLog($"[{DateTime.Now}] GDI count: ${GDIs}");
 		}
 
 		private void TurnOffAnimation()
