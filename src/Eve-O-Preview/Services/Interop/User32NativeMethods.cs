@@ -71,9 +71,14 @@ namespace EveOPreview.Services.Interop
 		[DllImport("user32.dll")]
 		extern public static int GetGuiResources(IntPtr hProcess, int uiFlags);
 
-		public static int GetGuiResourcesGDICount()
+		public static int GetGuiResourcesGDICount(IntPtr hProcess)
 		{
-			return GetGuiResources(Process.GetCurrentProcess().Handle, 0);
-    	}
+			return GetGuiResources(hProcess, 0);
+		}
+
+		public static int GetGuiResourcesGDICountPeak(IntPtr hProcess)
+		{
+			return GetGuiResources(hProcess, 2);
+		}
 	}
 }

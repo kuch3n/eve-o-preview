@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -87,9 +88,24 @@ namespace EveOPreview.Services.Implementation
 
 		private void OnTimerEvent(object stateInfo)
 		{
-			var GDIs = User32NativeMethods.GetGuiResourcesGDICount();
+			IntPtr hProc;
+			IntPtr hWnd;
 
-			WriteToLog($"[{DateTime.Now}] GDI count: ${GDIs}");
+			hProc = Process.GetCurrentProcess().Handle;
+			hWnd = Process.GetCurrentProcess().MainWindowHandle;
+			
+
+			var count = User32NativeMethods.GetGuiResourcesGDICount(hProc);
+			var peak = User32NativeMethods.GetGuiResourcesGDICountPeak(hProc);
+
+			WriteToLog($"[{DateTime.Now}] Process - GDIs: {count}. GDI peak: {peak}");
+
+			count = User32NativeMethods.GetGuiResourcesGDICount(hWnd);
+			peak = User32NativeMethods.GetGuiResourcesGDICountPeak(hWnd);
+			WriteToLog($"[{DateTime.Now}] MainWindow -  GDIs: {count} peak: {peak}");
+
+			var handleCount = Process.GetCurrentProcess().HandleCount;
+			WriteToLog($"[{DateTime.Now}] Handle count: {handleCount}");
 		}
 
 		private void TurnOffAnimation()
@@ -155,7 +171,7 @@ namespace EveOPreview.Services.Implementation
                 } 
                 else 
                 {
-                    cmd = $"-c \"wmctrl -a \"\"" + windowName + "\"\"\"";
+                    cmd = $"\"wmctrl -a \"\"" + windowName + "\"\"\"";
                 }
 
 				// Configure and start the process
