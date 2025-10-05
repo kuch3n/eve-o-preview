@@ -171,13 +171,13 @@ namespace EveOPreview.Services.Implementation
                 } 
                 else 
                 {
-                    cmd = $"\"wmctrl -a \"\"" + windowName + "\"\"\"";
+                    cmd = $"-c \"wmctrl -a \"\"" + windowName + "\"\"\"";
                 }
 
 				// Configure and start the process
 				var info = new System.Diagnostics.ProcessStartInfo
 				{
-					FileName = "/bin/nohup",
+					FileName = "/bin/sh",
 					Arguments = cmd,
 					UseShellExecute = false,
 					CreateNoWindow = false,
