@@ -277,9 +277,23 @@ namespace EveOPreview.Services.Implementation
 					case AnimationStyle.OriginalAnimation:
 						WINDOWPLACEMENT param = new WINDOWPLACEMENT();
 						param.length = Marshal.SizeOf(typeof(WINDOWPLACEMENT));
-						User32NativeMethods.GetWindowPlacement(handle, ref param);
+
+						if (!User32NativeMethods.GetWindowPlacement(handle, ref param))
+						{
+							WriteToLog($"[{DateTime.Now}] {nameof(MinimizeWindow)} - {nameof(User32NativeMethods.GetWindowPlacement)} returned NULL");
+
+							return;
+						}
+
 						param.showCmd = WINDOWPLACEMENT.SW_MINIMIZE;
-						User32NativeMethods.SetWindowPlacement(handle, ref param);
+						
+						if (!User32NativeMethods.SetWindowPlacement(handle, ref param))
+						{
+							WriteToLog($"[{DateTime.Now}] {nameof(MinimizeWindow)} - {nameof(User32NativeMethods.SetWindowPlacement)} returned NULL");
+
+							return;
+						}
+						
 						break;
 					case AnimationStyle.NoAnimation:
 						TurnOffAnimation();
@@ -303,7 +317,13 @@ namespace EveOPreview.Services.Implementation
 
 		public (int Left, int Top, int Right, int Bottom) GetWindowPosition(IntPtr handle)
 		{
-			User32NativeMethods.GetWindowRect(handle, out RECT windowRectangle);
+			IntPtr res = User32NativeMethods.GetWindowRect(handle, out RECT windowRectangle);
+			if (res == IntPtr.Zero)
+			{
+				WriteToLog($"[{DateTime.Now}] {nameof(GetWindowPosition)} - {nameof(User32NativeMethods.GetWindowRect)} returned NULL");
+
+				return (0, 0, 0, 0);
+			}
 
 			return (windowRectangle.Left, windowRectangle.Top, windowRectangle.Right, windowRectangle.Bottom);
 		}
@@ -328,9 +348,22 @@ namespace EveOPreview.Services.Implementation
 
 		public Image GetStaticThumbnail(IntPtr source)
 		{
-			var sourceContext = User32NativeMethods.GetDC(source);
+			const int HGDI_ERROR = 65535;
 
-			User32NativeMethods.GetClientRect(source, out RECT windowRect);
+			IntPtr sourceContext = User32NativeMethods.GetDC(source);
+			if (sourceContext == IntPtr.Zero)
+			{
+				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(User32NativeMethods.GetDC)} returned NULL");
+
+				return null;
+			}
+
+			if (!User32NativeMethods.GetClientRect(source, out RECT windowRect))
+			{
+				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(User32NativeMethods.GetClientRect)} failed");
+
+				return null;
+			}
 
 			var width = windowRect.Right - windowRect.Left;
 			var height = windowRect.Bottom - windowRect.Top;
@@ -338,20 +371,74 @@ namespace EveOPreview.Services.Implementation
 			// Check if there is anything to make thumbnail of
 			if ((width < WINDOW_SIZE_THRESHOLD) || (height < WINDOW_SIZE_THRESHOLD))
 			{
+				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - Nothing to draw: (w: {width}) h: {height}");
+
 				return null;
 			}
 
-			var destContext = Gdi32NativeMethods.CreateCompatibleDC(sourceContext);
-			var bitmap = Gdi32NativeMethods.CreateCompatibleBitmap(sourceContext, width, height);
+			IntPtr destContext = Gdi32NativeMethods.CreateCompatibleDC(sourceContext);
+			if (destContext == IntPtr.Zero)
+			{
+				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.CreateCompatibleDC)} returned NULL");
 
-			var oldBitmap = Gdi32NativeMethods.SelectObject(destContext, bitmap);
-			Gdi32NativeMethods.BitBlt(destContext, 0, 0, width, height, sourceContext, 0, 0, Gdi32NativeMethods.SRCCOPY);
-			Gdi32NativeMethods.SelectObject(destContext, oldBitmap);
-			Gdi32NativeMethods.DeleteDC(destContext);
-			User32NativeMethods.ReleaseDC(source, sourceContext);
+				return null;
+			}
+
+			IntPtr bitmap = Gdi32NativeMethods.CreateCompatibleBitmap(sourceContext, width, height);
+			if (destContext == IntPtr.Zero)
+			{
+				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.CreateCompatibleBitmap)} returned NULL");
+
+				return null;
+			}
+
+			IntPtr oldBitmap = Gdi32NativeMethods.SelectObject(destContext, bitmap);
+			if (destContext == IntPtr.Zero)
+			{
+				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.SelectObject)} returned NULL");
+
+				return null;
+			}
+
+			if (!Gdi32NativeMethods.BitBlt(destContext, 0, 0, width, height, sourceContext, 0, 0, Gdi32NativeMethods.SRCCOPY))
+			{
+				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.BitBlt)} failed");
+
+				return null;
+			}
+
+			IntPtr bla = Gdi32NativeMethods.SelectObject(destContext, oldBitmap);
+			if (bla == IntPtr.Zero || bla == HGDI_ERROR)
+			{
+				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.SelectObject)} returned {bla}");
+
+				return null;
+			}
+
+			if(!Gdi32NativeMethods.DeleteDC(destContext))
+			{
+				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.DeleteDC)} failed");
+
+				return null;
+			}
+
+
+			IntPtr bla2 = User32NativeMethods.ReleaseDC(source, sourceContext);
+			if (bla2 == IntPtr.Zero)
+			{
+				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(User32NativeMethods.ReleaseDC)} returned {bla}");
+
+				return null;
+			}
 
 			Image image = Image.FromHbitmap(bitmap);
-			Gdi32NativeMethods.DeleteObject(bitmap);
+
+			if(!Gdi32NativeMethods.DeleteDC(bitmap))
+			{
+				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.DeleteDC)} failed");
+
+				return null;
+			}
 
 			return image;
 		}
