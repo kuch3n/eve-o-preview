@@ -599,7 +599,7 @@ namespace EveOPreview.View
 					this._baseZoomLocation = this.Location;
 					this.WindowMoved = true;
 
-					Impl.WindowManager.WriteToLog($"{nameof(ProcessCustomMouseMode)} - Point: {this.Location.X} {this.Location.Y}" );
+					Impl.WindowManager.WriteToLog($"{nameof(ProcessCustomMouseMode)} - Point: lX {this.Location.X} mX {mousePosition.X} oX {offsetX} lY {this.Location.Y} o.Y {offsetY} m.Y {mousePosition.Y}" );
 				}
 			}
 		}
