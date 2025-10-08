@@ -34,7 +34,7 @@ namespace EveOPreview.Services
 		private readonly IProcessMonitor _processMonitor;
 		private readonly IWindowManager _windowManager;
 		private readonly IThumbnailConfiguration _configuration;
-		private readonly DispatcherTimer _thumbnailUpdateTimer;
+		// private readonly DispatcherTimer _thumbnailUpdateTimer;
 		private readonly IThumbnailViewFactory _thumbnailViewFactory;
 		private readonly Dictionary<IntPtr, IThumbnailView> _thumbnailViews;
 
@@ -49,6 +49,8 @@ namespace EveOPreview.Services
 
 		private int _refreshCycleCount;
 		private int _hideThumbnailsDelay;
+
+		static System.Windows.Forms.Timer myTimer = new System.Windows.Forms.Timer();
 
 		private List<HotkeyHandler> _cycleClientHotkeyHandlers = new List<HotkeyHandler>();
 		#endregion
@@ -73,9 +75,10 @@ namespace EveOPreview.Services
 			this._thumbnailViews = new Dictionary<IntPtr, IThumbnailView>();
 
 			//  DispatcherTimer setup
-			this._thumbnailUpdateTimer = new DispatcherTimer();
-			this._thumbnailUpdateTimer.Tick += ThumbnailUpdateTimerTick;
-			this._thumbnailUpdateTimer.Interval = new TimeSpan(0, 0, 0, 0, configuration.ThumbnailRefreshPeriod);
+			myTimer = new System.Windows.Forms.Timer();
+			myTimer.Tick += new EventHandler(ThumbnailUpdateTimerTick);
+			myTimer.Interval = configuration.ThumbnailRefreshPeriod;
+			myTimer.Start();
 
 			this._hideThumbnailsDelay = this._configuration.HideThumbnailsDelay;
 
@@ -359,6 +362,7 @@ namespace EveOPreview.Services
 
 		private void RefreshThumbnails()
 		{
+			WindowManager.WriteToLog(nameof(RefreshThumbnails));
 			// TODO Split this method
 			IntPtr foregroundWindowHandle = this._windowManager.GetForegroundWindowHandle();
 
@@ -879,6 +883,8 @@ namespace EveOPreview.Services
 
 		private void EnqueueLocationChange(IThumbnailView view)
 		{
+			WindowManager.WriteToLog(nameof(EnqueueLocationChange));
+
 			string activeClientTitle = this._activeClient.Title;
 			// TODO ??
 			this._configuration.SetThumbnailLocation(view.Title, activeClientTitle, view.ThumbnailLocation);

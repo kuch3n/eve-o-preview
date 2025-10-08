@@ -582,7 +582,7 @@ namespace EveOPreview.View
 			int offsetY = mousePosition.Y - this._baseMousePosition.Y;
 			this._baseMousePosition = mousePosition;
 			
-			Impl.WindowManager.WriteToLog(nameof(ProcessCustomMouseMode));
+			
 
 			if (!_config.LockThumbnailLocation)
 			{
@@ -598,6 +598,8 @@ namespace EveOPreview.View
 					this.Location = new Point(this.Location.X + offsetX, this.Location.Y + offsetY);
 					this._baseZoomLocation = this.Location;
 					this.WindowMoved = true;
+
+					Impl.WindowManager.WriteToLog($"{nameof(ProcessCustomMouseMode)} - Point: {this.Location.X} {this.Location.Y}" );
 				}
 			}
 		}
