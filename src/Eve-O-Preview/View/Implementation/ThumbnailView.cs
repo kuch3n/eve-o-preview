@@ -509,6 +509,8 @@ namespace EveOPreview.View
 
 		private void MouseMove_Handler(object sender, MouseEventArgs e)
 		{
+			Impl.WindowManager.WriteToLog(nameof(MouseMove_Handler));
+
 			if (this._isCustomMouseModeActive)
 			{
 				this.ProcessCustomMouseMode(e.Button.HasFlag(MouseButtons.Left), e.Button.HasFlag(MouseButtons.Right));
@@ -579,23 +581,25 @@ namespace EveOPreview.View
 			int offsetX = mousePosition.X - this._baseMousePosition.X;
 			int offsetY = mousePosition.Y - this._baseMousePosition.Y;
 			this._baseMousePosition = mousePosition;
+			
+			Impl.WindowManager.WriteToLog(nameof(ProcessCustomMouseMode));
 
 			if (!_config.LockThumbnailLocation)
 			{
-                // Left + Right buttons trigger thumbnail resize
-                // Right button only trigger thumbnail movement
-                if (leftButton && rightButton)
-                {
-                    this.Size = new Size(this.Size.Width + offsetX, this.Size.Height + offsetY);
-                    this._baseZoomSize = this.Size;
-                }
-                else
-                {
-                    this.Location = new Point(this.Location.X + offsetX, this.Location.Y + offsetY);
-                    this._baseZoomLocation = this.Location;
+				// Left + Right buttons trigger thumbnail resize
+				// Right button only trigger thumbnail movement
+				if (leftButton && rightButton)
+				{
+					this.Size = new Size(this.Size.Width + offsetX, this.Size.Height + offsetY);
+					this._baseZoomSize = this.Size;
+				}
+				else
+				{
+					this.Location = new Point(this.Location.X + offsetX, this.Location.Y + offsetY);
+					this._baseZoomLocation = this.Location;
 					this.WindowMoved = true;
-                }
-            }
+				}
+			}
 		}
 
 		private void ExitCustomMouseMode()

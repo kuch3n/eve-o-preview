@@ -91,21 +91,21 @@ namespace EveOPreview.Services.Implementation
 			IntPtr hProc;
 			IntPtr hWnd;
 
-			hProc = Process.GetCurrentProcess().Handle;
-			hWnd = Process.GetCurrentProcess().MainWindowHandle;
+			// hProc = Process.GetCurrentProcess().Handle;
+			// hWnd = Process.GetCurrentProcess().MainWindowHandle;
 			
 
-			var count = User32NativeMethods.GetGuiResourcesGDICount(hProc);
-			var peak = User32NativeMethods.GetGuiResourcesGDICountPeak(hProc);
+			// var count = User32NativeMethods.GetGuiResourcesGDICount(hProc);
+			// var peak = User32NativeMethods.GetGuiResourcesGDICountPeak(hProc);
 
-			WriteToLog($"Process - GDIs: {count}. GDI peak: {peak}");
+			// WriteToLog($"Process - GDIs: {count}. GDI peak: {peak}");
 
-			count = User32NativeMethods.GetGuiResourcesGDICount(hWnd);
-			peak = User32NativeMethods.GetGuiResourcesGDICountPeak(hWnd);
-			WriteToLog($"MainWindow -  GDIs: {count} peak: {peak}");
+			// count = User32NativeMethods.GetGuiResourcesGDICount(hWnd);
+			// peak = User32NativeMethods.GetGuiResourcesGDICountPeak(hWnd);
+			// WriteToLog($"MainWindow -  GDIs: {count} peak: {peak}");
 
-			var handleCount = Process.GetCurrentProcess().HandleCount;
-			WriteToLog($"Handle count: {handleCount}");
+			// var handleCount = Process.GetCurrentProcess().HandleCount;
+			// WriteToLog($"Handle count: {handleCount}");
 		}
 
 		private void TurnOffAnimation()

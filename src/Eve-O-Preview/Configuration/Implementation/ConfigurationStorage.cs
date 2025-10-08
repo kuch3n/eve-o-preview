@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using EveOPreview.Services.Implementation;
 using Newtonsoft.Json;
 
 namespace EveOPreview.Configuration.Implementation
@@ -42,6 +43,7 @@ namespace EveOPreview.Configuration.Implementation
 
 		public void Save()
 		{
+			WindowManager.WriteToLog($"{nameof(ConfigurationStorage)} - {nameof(Save)}");
 			string rawData = JsonConvert.SerializeObject(this._thumbnailConfiguration, Formatting.Indented);
 			string filename = this.GetConfigFileName();
 

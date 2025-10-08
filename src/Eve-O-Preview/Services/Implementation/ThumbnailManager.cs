@@ -931,6 +931,7 @@ namespace EveOPreview.Services
 
 		private async void RaiseThumbnailLocationUpdatedNotification(string title)
 		{
+			WindowManager.WriteToLog(nameof(RaiseThumbnailLocationUpdatedNotification));
 			if (string.IsNullOrEmpty(title) || (title == ThumbnailManager.DEFAULT_CLIENT_TITLE))
 			{
 				return;
