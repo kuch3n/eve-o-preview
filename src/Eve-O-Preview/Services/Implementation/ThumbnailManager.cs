@@ -248,14 +248,14 @@ namespace EveOPreview.Services
 
 		public void Start()
 		{
-			this._thumbnailUpdateTimer.Start();
+			myTimer.Start();
 
 			this.RefreshThumbnails();
 		}
 
 		public void Stop()
 		{
-			this._thumbnailUpdateTimer.Stop();
+			myTimer.Stop();
 		}
 
 		private void ThumbnailUpdateTimerTick(object sender, EventArgs e)
