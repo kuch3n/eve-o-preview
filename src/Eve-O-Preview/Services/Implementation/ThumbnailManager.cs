@@ -7,11 +7,13 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Threading;
+using Impl = EveOPreview.Services.Implementation;
 using EveOPreview.Configuration;
 using EveOPreview.Mediator.Messages;
 using EveOPreview.UI.Hotkeys;
 using EveOPreview.View;
 using MediatR;
+using EveOPreview.Services.Implementation;
 
 namespace EveOPreview.Services
 {
@@ -688,6 +690,8 @@ namespace EveOPreview.Services
 			{
 				return false;
 			}
+
+			WindowManager.WriteToLog($"{nameof(IsClientWindowActive)} - {nameof(_thumbnailViews)}: {_thumbnailViews.Count}");
 
 			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
 			{

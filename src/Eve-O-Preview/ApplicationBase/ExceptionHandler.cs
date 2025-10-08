@@ -39,7 +39,7 @@ namespace EveOPreview
 			try
 			{
 				String exceptionMessage = exception.ToString();
-				File.WriteAllText(ExceptionHandler.EXCEPTION_DUMP_FILE_NAME, exceptionMessage);
+				File.AppendAllText(ExceptionHandler.EXCEPTION_DUMP_FILE_NAME, exceptionMessage);
 
 				MessageBox.Show(ExceptionHandler.EXCEPTION_MESSAGE, @"EVE-O-Preview", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}

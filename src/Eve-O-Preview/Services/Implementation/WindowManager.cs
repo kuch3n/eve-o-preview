@@ -64,11 +64,11 @@ namespace EveOPreview.Services.Implementation
 		}
 #endif
 
-		private void WriteToLog(string message)
+		public static void WriteToLog(string message)
 		{
 			try
 			{
-				System.IO.File.AppendAllText(EXCEPTION_DUMP_FILE_NAME, message + Environment.NewLine);
+				System.IO.File.AppendAllText(EXCEPTION_DUMP_FILE_NAME, $"[{DateTime.Now}] " + message + Environment.NewLine);
 			}
 			catch (Exception ex)
 			{
@@ -98,14 +98,14 @@ namespace EveOPreview.Services.Implementation
 			var count = User32NativeMethods.GetGuiResourcesGDICount(hProc);
 			var peak = User32NativeMethods.GetGuiResourcesGDICountPeak(hProc);
 
-			WriteToLog($"[{DateTime.Now}] Process - GDIs: {count}. GDI peak: {peak}");
+			WriteToLog($"Process - GDIs: {count}. GDI peak: {peak}");
 
 			count = User32NativeMethods.GetGuiResourcesGDICount(hWnd);
 			peak = User32NativeMethods.GetGuiResourcesGDICountPeak(hWnd);
-			WriteToLog($"[{DateTime.Now}] MainWindow -  GDIs: {count} peak: {peak}");
+			WriteToLog($"MainWindow -  GDIs: {count} peak: {peak}");
 
 			var handleCount = Process.GetCurrentProcess().HandleCount;
-			WriteToLog($"[{DateTime.Now}] Handle count: {handleCount}");
+			WriteToLog($"Handle count: {handleCount}");
 		}
 
 		private void TurnOffAnimation()
@@ -280,7 +280,7 @@ namespace EveOPreview.Services.Implementation
 
 						if (!User32NativeMethods.GetWindowPlacement(handle, ref param))
 						{
-							WriteToLog($"[{DateTime.Now}] {nameof(MinimizeWindow)} - {nameof(User32NativeMethods.GetWindowPlacement)} returned NULL");
+							WriteToLog($"{nameof(MinimizeWindow)} - {nameof(User32NativeMethods.GetWindowPlacement)} returned NULL");
 
 							return;
 						}
@@ -289,7 +289,7 @@ namespace EveOPreview.Services.Implementation
 						
 						if (!User32NativeMethods.SetWindowPlacement(handle, ref param))
 						{
-							WriteToLog($"[{DateTime.Now}] {nameof(MinimizeWindow)} - {nameof(User32NativeMethods.SetWindowPlacement)} returned NULL");
+							WriteToLog($"{nameof(MinimizeWindow)} - {nameof(User32NativeMethods.SetWindowPlacement)} returned NULL");
 
 							return;
 						}
@@ -320,7 +320,7 @@ namespace EveOPreview.Services.Implementation
 			IntPtr res = User32NativeMethods.GetWindowRect(handle, out RECT windowRectangle);
 			if (res == IntPtr.Zero)
 			{
-				WriteToLog($"[{DateTime.Now}] {nameof(GetWindowPosition)} - {nameof(User32NativeMethods.GetWindowRect)} returned NULL");
+				WriteToLog($"{nameof(GetWindowPosition)} - {nameof(User32NativeMethods.GetWindowRect)} returned NULL");
 
 				return (0, 0, 0, 0);
 			}
@@ -353,14 +353,14 @@ namespace EveOPreview.Services.Implementation
 			IntPtr sourceContext = User32NativeMethods.GetDC(source);
 			if (sourceContext == IntPtr.Zero)
 			{
-				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(User32NativeMethods.GetDC)} returned NULL");
+				WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(User32NativeMethods.GetDC)} returned NULL");
 
 				return null;
 			}
 
 			if (!User32NativeMethods.GetClientRect(source, out RECT windowRect))
 			{
-				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(User32NativeMethods.GetClientRect)} failed");
+				WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(User32NativeMethods.GetClientRect)} failed");
 
 				return null;
 			}
@@ -371,7 +371,7 @@ namespace EveOPreview.Services.Implementation
 			// Check if there is anything to make thumbnail of
 			if ((width < WINDOW_SIZE_THRESHOLD) || (height < WINDOW_SIZE_THRESHOLD))
 			{
-				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - Nothing to draw: (w: {width}) h: {height}");
+				WriteToLog($"{nameof(GetStaticThumbnail)} - Nothing to draw: (w: {width}) h: {height}");
 
 				return null;
 			}
@@ -379,7 +379,7 @@ namespace EveOPreview.Services.Implementation
 			IntPtr destContext = Gdi32NativeMethods.CreateCompatibleDC(sourceContext);
 			if (destContext == IntPtr.Zero)
 			{
-				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.CreateCompatibleDC)} returned NULL");
+				WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.CreateCompatibleDC)} returned NULL");
 
 				return null;
 			}
@@ -395,14 +395,14 @@ namespace EveOPreview.Services.Implementation
 			IntPtr oldBitmap = Gdi32NativeMethods.SelectObject(destContext, bitmap);
 			if (oldBitmap == IntPtr.Zero)
 			{
-				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.SelectObject)} returned NULL");
+				WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.SelectObject)} returned NULL");
 
 				return null;
 			}
 
 			if (!Gdi32NativeMethods.BitBlt(destContext, 0, 0, width, height, sourceContext, 0, 0, Gdi32NativeMethods.SRCCOPY))
 			{
-				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.BitBlt)} failed");
+				WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.BitBlt)} failed");
 
 				return null;
 			}
@@ -410,14 +410,14 @@ namespace EveOPreview.Services.Implementation
 			IntPtr bla = Gdi32NativeMethods.SelectObject(destContext, oldBitmap);
 			if (bla == IntPtr.Zero || bla == HGDI_ERROR)
 			{
-				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.SelectObject)} returned {bla}");
+				WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.SelectObject)} returned {bla}");
 
 				return null;
 			}
 
 			if(!Gdi32NativeMethods.DeleteDC(destContext))
 			{
-				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.DeleteDC)} failed");
+				WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.DeleteDC)} failed");
 
 				return null;
 			}
@@ -426,7 +426,7 @@ namespace EveOPreview.Services.Implementation
 			IntPtr bla2 = User32NativeMethods.ReleaseDC(source, sourceContext);
 			if (bla2 == IntPtr.Zero)
 			{
-				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(User32NativeMethods.ReleaseDC)} returned {bla}");
+				WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(User32NativeMethods.ReleaseDC)} returned {bla}");
 
 				return null;
 			}
@@ -436,15 +436,15 @@ namespace EveOPreview.Services.Implementation
 			// ToDo: Use DeleteObject as advised by https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-createcompatiblebitmap
 			if (!Gdi32NativeMethods.DeleteDC(bitmap))
 			{
-				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.DeleteDC)} failed");
+				WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.DeleteDC)} failed");
 
 				if (!Gdi32NativeMethods.DeleteObject(bitmap))
 				{
-					WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.DeleteObject)} failed");
+					WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.DeleteObject)} failed");
 				}
 				else
 				{
-					WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.DeleteObject)} succeeded :3");
+					WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.DeleteObject)} succeeded :3");
 				}
 			}
 

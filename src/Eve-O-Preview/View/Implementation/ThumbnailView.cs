@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using Impl = EveOPreview.Services.Implementation;
 using EveOPreview.Configuration;
 using EveOPreview.Services;
 using EveOPreview.UI.Hotkeys;
@@ -501,7 +502,9 @@ namespace EveOPreview.View
 
 		private void MouseDown_Handler(object sender, MouseEventArgs e)
 		{
+			Impl.WindowManager.WriteToLog(nameof(MouseDown_Handler));
 			this.MouseDownEventHandler(e.Button, Control.ModifierKeys);
+
 		}
 
 		private void MouseMove_Handler(object sender, MouseEventArgs e)
