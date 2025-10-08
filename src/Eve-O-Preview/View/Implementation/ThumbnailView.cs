@@ -601,13 +601,13 @@ namespace EveOPreview.View
 					distX = Math.Max(0, distX);
 					distY = Math.Max(0, distY);
 
-					this.Size = new Size(distX, distY);
+					this.Size = new Size(2 * distX, 2 * distY);
 					this._baseZoomSize = this.Size;
 				}
 				else
 				{
-					int newX = mousePos.X - w;
-					int newY = mousePos.Y - h;
+					int newX = mousePos.X - centerX;
+					int newY = mousePos.Y - centerY;
 
 					newX = Math.Max(0, newX);
 					newY = Math.Max(0, newY);
