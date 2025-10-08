@@ -7,6 +7,7 @@ using Impl = EveOPreview.Services.Implementation;
 using EveOPreview.Configuration;
 using EveOPreview.Services;
 using EveOPreview.UI.Hotkeys;
+using Microsoft.VisualBasic;
 
 namespace EveOPreview.View
 {
@@ -577,11 +578,15 @@ namespace EveOPreview.View
 
 		private void ProcessCustomMouseMode(bool leftButton, bool rightButton)
 		{
-			Point mousePosition = Control.MousePosition;
-			int offsetX = mousePosition.X - this._baseMousePosition.X;
-			int offsetY = mousePosition.Y - this._baseMousePosition.Y;
-			this._baseMousePosition = mousePosition;
-			
+			Point mousePos = Control.MousePosition;
+
+			// Avoid race conditions by calculating thumbnail location directly instead of using the safed location from "last" event
+			int w = this.Size.Width;
+			int h = this.Size.Height;
+
+			int centerX = w / 2.0;
+			int centerY = h / 2.0;
+
 			
 
 			if (!_config.LockThumbnailLocation)
@@ -590,16 +595,28 @@ namespace EveOPreview.View
 				// Right button only trigger thumbnail movement
 				if (leftButton && rightButton)
 				{
-					this.Size = new Size(this.Size.Width + offsetX, this.Size.Height + offsetY);
+					int distX = mousePos.X - this.Location.X;
+					int distY = mousePos.Y - this.Location.Y;
+
+					distX = Math.Max(0, distX);
+					distY = Math.Max(0, distY);
+
+					this.Size = new Size(distX, distY);
 					this._baseZoomSize = this.Size;
 				}
 				else
 				{
-					this.Location = new Point(this.Location.X + offsetX, this.Location.Y + offsetY);
+					int newX = mousePos.X - w;
+					int newY = mousePos.Y - h;
+
+					newX = Math.Max(0, newX);
+					newY = Math.Max(0, newY);
+
+					this.Location = new Point(newX, newY);
 					this._baseZoomLocation = this.Location;
 					this.WindowMoved = true;
 
-					Impl.WindowManager.WriteToLog($"{nameof(ProcessCustomMouseMode)} - Point: lX {this.Location.X} mX {mousePosition.X} oX {offsetX} lY {this.Location.Y} o.Y {offsetY} m.Y {mousePosition.Y}" );
+					Impl.WindowManager.WriteToLog($"{nameof(ProcessCustomMouseMode)} - w: {w} centerX: {centerX} newX: {newX} h: {h} centerY: {centerY} newY: {newY}");
 				}
 			}
 		}
