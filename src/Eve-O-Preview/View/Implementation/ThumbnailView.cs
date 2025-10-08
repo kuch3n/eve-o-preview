@@ -584,8 +584,8 @@ namespace EveOPreview.View
 			int w = this.Size.Width;
 			int h = this.Size.Height;
 
-			int centerX = w / 2.0;
-			int centerY = h / 2.0;
+			int centerX = w / 2;
+			int centerY = h / 2;
 
 			
 
