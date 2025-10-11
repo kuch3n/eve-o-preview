@@ -1,11 +1,13 @@
-﻿using System;
+﻿using EveOPreview.Configuration;
+using EveOPreview.Services.Interop;
+using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
-using EveOPreview.Configuration;
-using EveOPreview.Services.Interop;
+using System.Windows;
+using System.Windows.Media.Media3D;
 
 namespace EveOPreview.Services.Implementation
 {
@@ -350,97 +352,40 @@ namespace EveOPreview.Services.Implementation
 		public Image GetStaticThumbnail(IntPtr source)
 		{
 			const int HGDI_ERROR = 65535;
+            const int SM_XVIRTUALSCREEN = 76;
+			const int SM_YVIRTUALSCREEN = 77;
+			const int SM_CXVIRTUALSCREEN = 78;
+			const int SM_CYVIRTUALSCREEN = 79;
 
-			IntPtr sourceContext = User32NativeMethods.GetDC(source);
-			if (sourceContext == IntPtr.Zero)
+            int x = User32NativeMethods.GetSystemMetrics(SM_XVIRTUALSCREEN);
+            int y = User32NativeMethods.GetSystemMetrics(SM_YVIRTUALSCREEN);
+            int w = User32NativeMethods.GetSystemMetrics(SM_CXVIRTUALSCREEN);
+            int h = User32NativeMethods.GetSystemMetrics(SM_CYVIRTUALSCREEN);
+
+			Rectangle screenBounds = new(x, y, w, h);
+
+            RECT windowRect;
+            if (User32NativeMethods.GetWindowRect(source, out windowRect) == IntPtr.Zero)
 			{
-				WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(User32NativeMethods.GetDC)} returned NULL");
-
-				return null;
-			}
-
-			if (!User32NativeMethods.GetClientRect(source, out RECT windowRect))
+                return null;
+            }
+                
+            Rectangle windowBounds = new Rectangle(windowRect.Left, windowRect.Top, windowRect.Right - windowRect.Left, windowRect.Bottom - windowRect.Top);
+            Rectangle intersection = Rectangle.Intersect(screenBounds, windowBounds);
+            if (intersection.IsEmpty)
 			{
-				WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(User32NativeMethods.GetClientRect)} failed");
+                return null;
+            }
+                
+            Bitmap screenshot = new Bitmap(intersection.Width, intersection.Height);
+            using (Graphics g = Graphics.FromImage(screenshot))
+            {
+                IntPtr hdc = g.GetHdc();
+                User32NativeMethods.PrintWindow(source, hdc, 3);
+                g.ReleaseHdc(hdc);
+            }
 
-				return null;
-			}
-
-			var width = windowRect.Right - windowRect.Left;
-			var height = windowRect.Bottom - windowRect.Top;
-
-			// Check if there is anything to make thumbnail of
-			if ((width < WINDOW_SIZE_THRESHOLD) || (height < WINDOW_SIZE_THRESHOLD))
-			{
-				WriteToLog($"{nameof(GetStaticThumbnail)} - Nothing to draw: (w: {width}) h: {height}");
-
-				return null;
-			}
-
-			IntPtr destContext = Gdi32NativeMethods.CreateCompatibleDC(sourceContext);
-			if (destContext == IntPtr.Zero)
-			{
-				WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.CreateCompatibleDC)} returned NULL");
-
-				return null;
-			}
-
-			IntPtr bitmap = Gdi32NativeMethods.CreateCompatibleBitmap(sourceContext, width, height);
-			if (bitmap == IntPtr.Zero)
-			{
-				WriteToLog($"[{DateTime.Now}] {nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.CreateCompatibleBitmap)} returned NULL");
-
-				return null;
-			}
-
-			IntPtr oldBitmap = Gdi32NativeMethods.SelectObject(destContext, bitmap);
-			if (oldBitmap == IntPtr.Zero)
-			{
-				WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.SelectObject)} returned NULL");
-
-				return null;
-			}
-
-			if (!Gdi32NativeMethods.BitBlt(destContext, 0, 0, width, height, sourceContext, 0, 0, Gdi32NativeMethods.SRCCOPY))
-			{
-				WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.BitBlt)} failed");
-
-				return null;
-			}
-
-			IntPtr bla = Gdi32NativeMethods.SelectObject(destContext, oldBitmap);
-			if (bla == IntPtr.Zero || bla == HGDI_ERROR)
-			{
-				WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.SelectObject)} returned {bla}");
-
-				return null;
-			}
-
-			if(!Gdi32NativeMethods.DeleteDC(destContext))
-			{
-				WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.DeleteDC)} failed");
-
-				return null;
-			}
-
-
-			IntPtr bla2 = User32NativeMethods.ReleaseDC(source, sourceContext);
-			if (bla2 == IntPtr.Zero)
-			{
-				WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(User32NativeMethods.ReleaseDC)} returned {bla}");
-
-				return null;
-			}
-
-			Image image = Image.FromHbitmap(bitmap);
-
-			// ToDo: Use DeleteObject as advised by https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-createcompatiblebitmap
-			if (!Gdi32NativeMethods.DeleteObject(bitmap))
-			{
-				WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.DeleteObject)} failed");
-			}
-			
-			return image;
+            return screenshot;
 		}
 	}
 }

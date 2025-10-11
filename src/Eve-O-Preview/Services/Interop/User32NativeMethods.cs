@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace EveOPreview.Services.Interop
@@ -80,5 +81,15 @@ namespace EveOPreview.Services.Interop
 		{
 			return GetGuiResources(hProcess, 2);
 		}
-	}
+
+		[DllImport("user32.dll")]
+		extern  public static int GetSystemMetrics(int setting);
+
+		[DllImport("user32.dll")]
+		public static extern IntPtr GetDesktopWindow();
+
+		[DllImport("user32.dll")]
+		public static extern bool PrintWindow(IntPtr hwnd, IntPtr hdcBlt, uint flags);
+
+    }
 }
