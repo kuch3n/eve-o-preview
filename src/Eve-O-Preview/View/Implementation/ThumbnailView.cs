@@ -8,6 +8,7 @@ using EveOPreview.Configuration;
 using EveOPreview.Services;
 using EveOPreview.UI.Hotkeys;
 using Microsoft.VisualBasic;
+using System.Diagnostics;
 
 namespace EveOPreview.View
 {
@@ -510,8 +511,6 @@ namespace EveOPreview.View
 
 		private void MouseMove_Handler(object sender, MouseEventArgs e)
 		{
-			Impl.WindowManager.WriteToLog(nameof(MouseMove_Handler));
-
 			if (this._isCustomMouseModeActive)
 			{
 				this.ProcessCustomMouseMode(e.Button.HasFlag(MouseButtons.Left), e.Button.HasFlag(MouseButtons.Right));
@@ -603,7 +602,13 @@ namespace EveOPreview.View
 
 					this.Size = new Size(2 * distX, 2 * distY);
 					this._baseZoomSize = this.Size;
-				}
+
+                    Impl.WindowManager.WriteToLog($"{nameof(ProcessCustomMouseMode)}" +
+						$"\n\t Mouse  - x: {mousePos.X,5} y: {mousePos.Y,5}" +
+						$"\n\t Dist   - x: {distX,5} y: {distY,5}" +
+						$"\n\t Center - x: {centerX,5} y: {centerY,5}" +
+						$"\n\t Size   - w: {w,5} h: {h,5}");
+                }
 				else
 				{
 					int newX = mousePos.X - centerX;
@@ -616,8 +621,12 @@ namespace EveOPreview.View
 					this._baseZoomLocation = this.Location;
 					this.WindowMoved = true;
 
-					Impl.WindowManager.WriteToLog($"{nameof(ProcessCustomMouseMode)} - w: {w} centerX: {centerX} newX: {newX} h: {h} centerY: {centerY} newY: {newY}");
-				}
+                    Impl.WindowManager.WriteToLog($"{nameof(ProcessCustomMouseMode)}" +
+                        $"\n\t Mouse  - x: {mousePos.X,5} y: {mousePos.Y,5}" +
+                        $"\n\t New    - x: {newX,5} y: {newY,5}" +
+                        $"\n\t Center - x: {centerX,5} y: {centerY,5}" +
+                        $"\n\t Size   - w: {w,5} h: {h,5}");
+                }
 			}
 		}
 

@@ -68,7 +68,8 @@ namespace EveOPreview.Services.Implementation
 		{
 			try
 			{
-				System.IO.File.AppendAllText(EXCEPTION_DUMP_FILE_NAME, $"[{DateTime.Now}] " + message + Environment.NewLine);
+				Trace.WriteLine($"[{DateTime.Now}] " + message);
+				File.AppendAllText(EXCEPTION_DUMP_FILE_NAME, $"[{DateTime.Now}] " + message + Environment.NewLine);
 			}
 			catch (Exception ex)
 			{
@@ -91,21 +92,21 @@ namespace EveOPreview.Services.Implementation
 			IntPtr hProc;
 			IntPtr hWnd;
 
-			// hProc = Process.GetCurrentProcess().Handle;
-			// hWnd = Process.GetCurrentProcess().MainWindowHandle;
-			
+			hProc = Process.GetCurrentProcess().Handle;
+			hWnd = Process.GetCurrentProcess().MainWindowHandle;
 
-			// var count = User32NativeMethods.GetGuiResourcesGDICount(hProc);
-			// var peak = User32NativeMethods.GetGuiResourcesGDICountPeak(hProc);
 
-			// WriteToLog($"Process - GDIs: {count}. GDI peak: {peak}");
+			var count = User32NativeMethods.GetGuiResourcesGDICount(hProc);
+			var peak = User32NativeMethods.GetGuiResourcesGDICountPeak(hProc);
 
-			// count = User32NativeMethods.GetGuiResourcesGDICount(hWnd);
-			// peak = User32NativeMethods.GetGuiResourcesGDICountPeak(hWnd);
-			// WriteToLog($"MainWindow -  GDIs: {count} peak: {peak}");
+			WriteToLog($"Process - GDIs: {count}. GDI peak: {peak}");
 
-			// var handleCount = Process.GetCurrentProcess().HandleCount;
-			// WriteToLog($"Handle count: {handleCount}");
+			count = User32NativeMethods.GetGuiResourcesGDICount(hWnd);
+			peak = User32NativeMethods.GetGuiResourcesGDICountPeak(hWnd);
+		    // WriteToLog($"MainWindow -  GDIs: {count} peak: {peak}");
+
+			var handleCount = Process.GetCurrentProcess().HandleCount;
+			WriteToLog($"Handle count: {handleCount}");
 		}
 
 		private void TurnOffAnimation()
@@ -434,20 +435,11 @@ namespace EveOPreview.Services.Implementation
 			Image image = Image.FromHbitmap(bitmap);
 
 			// ToDo: Use DeleteObject as advised by https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-createcompatiblebitmap
-			if (!Gdi32NativeMethods.DeleteDC(bitmap))
+			if (!Gdi32NativeMethods.DeleteObject(bitmap))
 			{
-				WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.DeleteDC)} failed");
-
-				if (!Gdi32NativeMethods.DeleteObject(bitmap))
-				{
-					WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.DeleteObject)} failed");
-				}
-				else
-				{
-					WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.DeleteObject)} succeeded :3");
-				}
+				WriteToLog($"{nameof(GetStaticThumbnail)} - {nameof(Gdi32NativeMethods.DeleteObject)} failed");
 			}
-
+			
 			return image;
 		}
 	}
