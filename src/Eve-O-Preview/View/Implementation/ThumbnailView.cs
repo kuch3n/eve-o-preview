@@ -33,7 +33,6 @@ namespace EveOPreview.View
 		private int _highlightWidth;
 
 		private bool _isLocationChanged;
-		private bool _isSizeChanged;
 
 		private bool _isCustomMouseModeActive;
 
@@ -83,7 +82,6 @@ namespace EveOPreview.View
 			this._isHighlightRequested = false;
 
 			this._isLocationChanged = true;
-			this._isSizeChanged = true;
 
 			this._isCustomMouseModeActive = false;
 
@@ -183,7 +181,6 @@ namespace EveOPreview.View
 			base.Show();
 
 			this._isLocationChanged = true;
-			this._isSizeChanged = true;
 			this._isOverlayVisible = false;
 
 			this.Refresh(true);
@@ -307,8 +304,6 @@ namespace EveOPreview.View
 				this._isHighlightRequested = false;
 				this.BackColor = SystemColors.Control;
 			}
-
-			this._isSizeChanged = true;
 		}
 
 		public void ClearBorder()
@@ -415,11 +410,12 @@ namespace EveOPreview.View
                 Impl.WindowManager.WriteToLog($"{nameof(Refresh)}");
             }
 
+			bool sizeChanged = newSize != Size;
 			this.RefreshThumbnail(forceRefresh);
-			this.HighlightThumbnail(forceRefresh || this._isSizeChanged);
-			this.RefreshOverlay(forceRefresh || this._isSizeChanged || this._isLocationChanged);
+			this.HighlightThumbnail(forceRefresh || newSize != Size);
+			this.RefreshOverlay(forceRefresh || sizeChanged || this._isLocationChanged);
 
-			this._isSizeChanged = false;
+            sizeChanged = false;
 		}
 
 		protected abstract void RefreshThumbnail(bool forceRefresh);
@@ -527,7 +523,6 @@ namespace EveOPreview.View
 				return;
 			}
 
-			this._isSizeChanged = true;
 			NewSize = Size;
 
 			// this.ThumbnailResized?.Invoke(this.Id);

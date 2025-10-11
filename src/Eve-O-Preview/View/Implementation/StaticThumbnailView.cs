@@ -35,7 +35,7 @@ namespace EveOPreview.View
 				return;
 			}
 
-			var thumbnail = this.WindowManager.GetStaticThumbnail(this.Id);
+			var thumbnail = WindowManager.GetStaticThumbnail(this.Id);
 			if (thumbnail != null)
 			{
 				var oldImage = this._thumbnail.Image;
