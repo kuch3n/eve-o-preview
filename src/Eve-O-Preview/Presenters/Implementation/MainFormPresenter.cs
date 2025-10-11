@@ -7,6 +7,8 @@ using EveOPreview.Mediator.Messages;
 using EveOPreview.View;
 using MediatR;
 
+using Impl = EveOPreview.Services.Implementation;
+
 namespace EveOPreview.Presenters
 {
 	public class MainFormPresenter : Presenter<IMainFormView>, IMainFormPresenter
@@ -93,6 +95,7 @@ namespace EveOPreview.Presenters
 		{
 			if (!this._suppressSizeNotifications)
 			{
+				Impl.WindowManager.WriteToLog($"MainForm - {nameof(UpdateThumbnailsSize)}");
 				this.SaveApplicationSettings();
 				await this._mediator.Publish(new ThumbnailConfiguredSizeUpdated());
 			}

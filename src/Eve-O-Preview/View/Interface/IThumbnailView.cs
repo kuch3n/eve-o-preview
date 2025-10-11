@@ -1,8 +1,9 @@
-﻿using System;
+﻿using EveOPreview.Configuration;
+using EveOPreview.Services;
+using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
-using EveOPreview.Configuration;
-using EveOPreview.Services;
 
 namespace EveOPreview.View
 {
@@ -45,5 +46,11 @@ namespace EveOPreview.View
 		IWindowManager WindowManager { get; }
 		void SetDefaultBorderColor();
 		void ClearBorder();
-	}
+
+		Size NewSize { get; }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+		public void SetSize(Size size);
+    }
 }

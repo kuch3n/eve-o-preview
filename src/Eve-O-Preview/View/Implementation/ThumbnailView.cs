@@ -1,19 +1,21 @@
-using System;
-using System.ComponentModel;
-using System.Drawing;
-using System.Linq;
-using System.Windows.Forms;
-using Impl = EveOPreview.Services.Implementation;
 using EveOPreview.Configuration;
 using EveOPreview.Services;
 using EveOPreview.UI.Hotkeys;
 using Microsoft.VisualBasic;
+using System;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Windows.Forms;
+using System.Windows.Threading;
+using Impl = EveOPreview.Services.Implementation;
 
 namespace EveOPreview.View
 {
-	public abstract partial class ThumbnailView : Form, IThumbnailView
-	{
+	public abstract partial class ThumbnailView : Form, IThumbnailView, INotifyPropertyChanged
+    {
 		#region Private constants
 		private const double OPACITY_THRESHOLD = 0.9;
 		private const double OPACITY_EPSILON = 0.1;
@@ -40,17 +42,32 @@ namespace EveOPreview.View
 		private DateTime _suppressResizeEventsTimestamp;
 		private Size _baseZoomSize;
 		private Point _baseZoomLocation;
-		private Point _baseMousePosition;
 		private Size _baseZoomMaximumSize;
+		private Point mouseStartPos;
+		private Size windowStartSize;
 
-		private HotkeyHandler _hotkeyHandler;
+
+        private HotkeyHandler _hotkeyHandler;
 
 		private IThumbnailConfiguration _config;
 		private Lazy<Color> _myBorderColor;
 		private IThumbnailManager _thumbnailManager;
-		#endregion
 
-		protected ThumbnailView(IWindowManager windowManager, IThumbnailConfiguration config, IThumbnailManager thumbnailManager)
+        private Size newSize;
+        public Size NewSize
+        {
+            get { return newSize; }
+            set
+            {
+                newSize = value;
+                Notify();
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        #endregion
+
+        protected ThumbnailView(IWindowManager windowManager, IThumbnailConfiguration config, IThumbnailManager thumbnailManager)
 		{
 			this._config = config;
 			this.SuppressResizeEvent();
@@ -84,7 +101,15 @@ namespace EveOPreview.View
 
 		public IntPtr Id { get; set; }
 
-		public string Title
+        private void Notify([CallerMemberName] string propertyName = null)
+        {
+            Dispatcher.CurrentDispatcher.BeginInvoke(() =>
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            });
+        }
+
+        public string Title
 		{
 			get => this.Text;
 			set
@@ -146,7 +171,12 @@ namespace EveOPreview.View
 			});
 		}
 
-		public new void Show()
+        public void SetSize(Size size)
+		{
+			Size = size;
+		}
+
+        public new void Show()
 		{
 			this.SuppressResizeEvent();
 
@@ -376,6 +406,15 @@ namespace EveOPreview.View
 
 		public void Refresh(bool forceRefresh)
 		{
+			if(forceRefresh)
+			{
+                Impl.WindowManager.WriteToLog($"{nameof(Refresh)} - forced");
+            }
+			else
+			{
+                Impl.WindowManager.WriteToLog($"{nameof(Refresh)}");
+            }
+
 			this.RefreshThumbnail(forceRefresh);
 			this.HighlightThumbnail(forceRefresh || this._isSizeChanged);
 			this.RefreshOverlay(forceRefresh || this._isSizeChanged || this._isLocationChanged);
@@ -389,7 +428,9 @@ namespace EveOPreview.View
 
 		private void HighlightThumbnail(bool forceRefresh)
 		{
-			if (!forceRefresh && (this._isHighlightRequested == this._isHighlightEnabled))
+            Impl.WindowManager.WriteToLog($"{nameof(HighlightThumbnail)}");
+
+            if (!forceRefresh && (this._isHighlightRequested == this._isHighlightEnabled))
 			{
 				// Nothing to do here
 				return;
@@ -455,9 +496,10 @@ namespace EveOPreview.View
 
 		private void SuppressResizeEvent()
 		{
-			// Workaround for WinForms issue with the Resize event being fired with inconsistent ClientSize value
-			// Any Resize events fired before this timestamp will be ignored
-			this._suppressResizeEventsTimestamp = DateTime.UtcNow.AddMilliseconds(_config.ThumbnailResizeTimeoutPeriod);
+            Impl.WindowManager.WriteToLog($"{nameof(SuppressResizeEvent)}");
+            // Workaround for WinForms issue with the Resize event being fired with inconsistent ClientSize value
+            // Any Resize events fired before this timestamp will be ignored
+            this._suppressResizeEventsTimestamp = DateTime.UtcNow.AddMilliseconds(_config.ThumbnailResizeTimeoutPeriod);
 		}
 
 		#region GUI events
@@ -479,14 +521,16 @@ namespace EveOPreview.View
 
 		private void Resize_Handler(object sender, EventArgs e)
 		{
-			if (DateTime.UtcNow < this._suppressResizeEventsTimestamp)
+            // Impl.WindowManager.WriteToLog($"{nameof(Resize_Handler)}");
+            if (DateTime.UtcNow < this._suppressResizeEventsTimestamp)
 			{
 				return;
 			}
 
 			this._isSizeChanged = true;
+			NewSize = Size;
 
-			this.ThumbnailResized?.Invoke(this.Id);
+			// this.ThumbnailResized?.Invoke(this.Id);
 		}
 
 		private void MouseEnter_Handler(object sender, EventArgs e)
@@ -571,9 +615,13 @@ namespace EveOPreview.View
 		{
 			this.RestoreWindowSizeAndLocation();
 
-			this._isCustomMouseModeActive = true;
-			this._baseMousePosition = Control.MousePosition;
-		}
+			if(!_isCustomMouseModeActive)
+			{
+                mouseStartPos = Control.MousePosition;
+				windowStartSize = Size;
+                this._isCustomMouseModeActive = true;
+            }
+        }
 
 		private void ProcessCustomMouseMode(bool leftButton, bool rightButton)
 		{
@@ -586,7 +634,8 @@ namespace EveOPreview.View
 			int centerX = w / 2;
 			int centerY = h / 2;
 
-			
+			int deltaX = mousePos.X - mouseStartPos.X;
+			int deltaY = mousePos.Y - mouseStartPos.Y;			
 
 			if (!_config.LockThumbnailLocation)
 			{
@@ -594,20 +643,22 @@ namespace EveOPreview.View
 				// Right button only trigger thumbnail movement
 				if (leftButton && rightButton)
 				{
-					int distX = mousePos.X - this.Location.X;
-					int distY = mousePos.Y - this.Location.Y;
+					int sizeX = windowStartSize.Width + deltaX;
+                    int sizeY = windowStartSize.Height + deltaY;
 
-					distX = Math.Max(0, distX);
-					distY = Math.Max(0, distY);
+					sizeX = Math.Max(0, sizeX);
+					sizeY = Math.Max(0, sizeY);
 
-					this.Size = new Size(2 * distX, 2 * distY);
+					// this.Size = new Size(sizeX, sizeY);
 					this._baseZoomSize = this.Size;
 
-                    Impl.WindowManager.WriteToLog($"{nameof(ProcessCustomMouseMode)}" +
-						$"\n\t Mouse  - x: {mousePos.X,5} y: {mousePos.Y,5}" +
-						$"\n\t Dist   - x: {distX,5} y: {distY,5}" +
-						$"\n\t Center - x: {centerX,5} y: {centerY,5}" +
-						$"\n\t Size   - w: {w,5} h: {h,5}");
+					NewSize = new Size(sizeX, sizeY);
+
+      //              Impl.WindowManager.WriteToLog($"{nameof(ProcessCustomMouseMode)}" +
+						//$"\n\t Mouse  - x: {mousePos.X,5} y: {mousePos.Y,5}" +
+						//$"\n\t Dist   - x: {sizeX,5} y: {sizeY,5}" +
+						//$"\n\t Center - x: {centerX,5} y: {centerY,5}" +
+						//$"\n\t Size   - w: {w,5} h: {h,5}");
                 }
 				else
 				{
@@ -621,18 +672,21 @@ namespace EveOPreview.View
 					this._baseZoomLocation = this.Location;
 					this.WindowMoved = true;
 
-                    Impl.WindowManager.WriteToLog($"{nameof(ProcessCustomMouseMode)}" +
-                        $"\n\t Mouse  - x: {mousePos.X,5} y: {mousePos.Y,5}" +
-                        $"\n\t New    - x: {newX,5} y: {newY,5}" +
-                        $"\n\t Center - x: {centerX,5} y: {centerY,5}" +
-                        $"\n\t Size   - w: {w,5} h: {h,5}");
+      //              Impl.WindowManager.WriteToLog($"{nameof(ProcessCustomMouseMode)}" +
+      //                  $"\n\t Mouse  - x: {mousePos.X,5} y: {mousePos.Y,5}" +
+      //                  $"\n\t New    - x: {newX,5} y: {newY,5}" +
+      //                  $"\n\t Center - x: {centerX,5} y: {centerY,5}" +
+      //                  $"\n\t Size   - w: {w,5} h: {h,5}" +
+						//$"\n\t Delta  - x: {deltaX,5} y: {deltaY,5}");
                 }
-			}
+
+            }
 		}
 
 		private void ExitCustomMouseMode()
 		{
-			this._isCustomMouseModeActive = false;
+			Impl.WindowManager.WriteToLog($"{nameof(ExitCustomMouseMode)}");
+            this._isCustomMouseModeActive = false;
 		}
 		#endregion
 

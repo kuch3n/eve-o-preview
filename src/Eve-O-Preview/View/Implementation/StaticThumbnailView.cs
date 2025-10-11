@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using EveOPreview.Configuration;
 using EveOPreview.Services;
+using Impl = EveOPreview.Services.Implementation;
 
 namespace EveOPreview.View
 {
@@ -16,7 +17,7 @@ namespace EveOPreview.View
 		public StaticThumbnailView(IWindowManager windowManager, IThumbnailConfiguration config, IThumbnailManager thumbnailManager)
 			: base(windowManager, config, thumbnailManager)
 		{
-			this._thumbnail = new StaticThumbnailImage
+            this._thumbnail = new StaticThumbnailImage
 			{
 				TabStop = false,
 				SizeMode = PictureBoxSizeMode.StretchImage,

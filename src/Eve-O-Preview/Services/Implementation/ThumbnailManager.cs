@@ -1,19 +1,21 @@
-﻿using System;
+﻿using EveOPreview.Configuration;
+using EveOPreview.Mediator.Messages;
+using EveOPreview.Services.Implementation;
+using EveOPreview.UI.Hotkeys;
+using EveOPreview.View;
+using MediatR;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Windows.Documents;
 using System.Windows.Forms;
 using System.Windows.Threading;
 using Impl = EveOPreview.Services.Implementation;
-using EveOPreview.Configuration;
-using EveOPreview.Mediator.Messages;
-using EveOPreview.UI.Hotkeys;
-using EveOPreview.View;
-using MediatR;
-using EveOPreview.Services.Implementation;
 
 namespace EveOPreview.Services
 {
@@ -53,9 +55,9 @@ namespace EveOPreview.Services
 		static System.Windows.Forms.Timer myTimer = new System.Windows.Forms.Timer();
 
 		private List<HotkeyHandler> _cycleClientHotkeyHandlers = new List<HotkeyHandler>();
-		#endregion
+        #endregion
 
-		public ThumbnailManager(IMediator mediator, IThumbnailConfiguration configuration, IProcessMonitor processMonitor, IWindowManager windowManager, IThumbnailViewFactory factory)
+        public ThumbnailManager(IMediator mediator, IThumbnailConfiguration configuration, IProcessMonitor processMonitor, IWindowManager windowManager, IThumbnailViewFactory factory)
 		{
 			this._mediator = mediator;
 			this._processMonitor = processMonitor;
@@ -97,6 +99,21 @@ namespace EveOPreview.Services
 			RegisterCycleClientHotkey(this._configuration.CycleGroup5ForwardHotkeys?.Select(x => this._configuration.StringToKey(x)), true, this._configuration.CycleGroup5ClientsOrder);
 			RegisterCycleClientHotkey(this._configuration.CycleGroup5BackwardHotkeys?.Select(x => this._configuration.StringToKey(x)), false, this._configuration.CycleGroup5ClientsOrder);
 		}
+
+		private void OnThumbnailPropertyChanged(object o, PropertyChangedEventArgs e)
+		{
+			//Impl.WindowManager.WriteToLog($"{nameof(OnThumbnailPropertyChanged)} - {e.PropertyName}");
+			if (o is null)
+				return;
+
+			var newSize = ((IThumbnailView)o).NewSize;
+			foreach((IntPtr ptr, IThumbnailView view) in _thumbnailViews)
+			{
+				view.SetSize(newSize);
+			}
+        }
+
+
 
 		public IThumbnailView GetClientByTitle(string title)
 		{
@@ -266,7 +283,7 @@ namespace EveOPreview.Services
 
 		private async void UpdateThumbnailsList()
 		{
-			this._processMonitor.GetUpdatedProcesses(out ICollection<IProcessInfo> addedProcesses, out ICollection<IProcessInfo> updatedProcesses, out ICollection<IProcessInfo> removedProcesses);
+            this._processMonitor.GetUpdatedProcesses(out ICollection<IProcessInfo> addedProcesses, out ICollection<IProcessInfo> updatedProcesses, out ICollection<IProcessInfo> removedProcesses);
 
 			List<string> viewsAdded = new List<string>();
 			List<string> viewsRemoved = new List<string>();
@@ -301,6 +318,7 @@ namespace EveOPreview.Services
 				view.ThumbnailDeactivated = this.ThumbnailDeactivated;
 
 				view.RegisterHotkey(this._configuration.GetClientHotkey(view.Title));
+				view.PropertyChanged += OnThumbnailPropertyChanged;
 
 				this.ApplyClientLayout(view);
 
@@ -356,9 +374,12 @@ namespace EveOPreview.Services
 
 			if ((viewsAdded.Count > 0) || (viewsRemoved.Count > 0))
 			{
-				await this._mediator.Publish(new ThumbnailListUpdated(viewsAdded, viewsRemoved));
+                Impl.WindowManager.WriteToLog($"{nameof(UpdateThumbnailsList)} - await {nameof(ThumbnailListUpdated)}");
+                await this._mediator.Publish(new ThumbnailListUpdated(viewsAdded, viewsRemoved));
 			}
-		}
+
+            Impl.WindowManager.WriteToLog($"{nameof(UpdateThumbnailsList)} - Exit");
+        }
 
 		private void RefreshThumbnails()
 		{
@@ -529,10 +550,13 @@ namespace EveOPreview.Services
 		{
 			this.DisableViewEvents();
 
-			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
+            Impl.WindowManager.WriteToLog($"{nameof(SetThumbnailsSize)}");
+
+            foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
 			{
-				entry.Value.ThumbnailSize = size;
-				entry.Value.Refresh(false);
+                
+                entry.Value.ThumbnailSize = size;
+				// entry.Value.Refresh(false);
 			}
 
 			this.EnableViewEvents();
@@ -670,9 +694,10 @@ namespace EveOPreview.Services
 
 			this.SetThumbnailsSize(view.ThumbnailSize);
 
-			view.Refresh(false);
-
-			await this._mediator.Publish(new ThumbnailActiveSizeUpdated(view.ThumbnailSize));
+			//view.Refresh(false);
+            WindowManager.WriteToLog($"{nameof(ThumbnailViewResized)} - await");
+			// ToDo: usage?
+            //await this._mediator.Publish(new ThumbnailActiveSizeUpdated(view.ThumbnailSize));
 		}
 
 		private void ThumbnailViewMoved(IntPtr id)
@@ -683,7 +708,8 @@ namespace EveOPreview.Services
 			}
 
 			IThumbnailView view = this._thumbnailViews[id];
-			view.Refresh(false);
+            Impl.WindowManager.WriteToLog($"{nameof(ThumbnailViewMoved)}");
+            view.Refresh(false);
 			this.EnqueueLocationChange(view);
 		}
 
@@ -718,7 +744,8 @@ namespace EveOPreview.Services
 
 		private void ThumbnailZoomIn(IThumbnailView view)
 		{
-			this.DisableViewEvents();
+            Impl.WindowManager.WriteToLog($"{nameof(ThumbnailZoomIn)}");
+            this.DisableViewEvents();
 
 			view.ZoomIn(ViewZoomAnchorConverter.Convert(view.ClientZoomAnchor), this._configuration.ThumbnailZoomFactor);
 			view.Refresh(false);
@@ -728,7 +755,8 @@ namespace EveOPreview.Services
 
 		private void ThumbnailZoomOut(IThumbnailView view)
 		{
-			this.DisableViewEvents();
+            Impl.WindowManager.WriteToLog($"{nameof(ThumbnailZoomOut)}");
+            this.DisableViewEvents();
 
 			view.ZoomOut();
 			view.Refresh(false);
