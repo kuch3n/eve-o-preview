@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
@@ -11,6 +12,7 @@ using System.Windows.Media.Media3D;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Gdi;
+using Windows.Win32.UI.WindowsAndMessaging;
 
 namespace EveOPreview.Services.Implementation
 {
@@ -89,7 +91,7 @@ namespace EveOPreview.Services.Implementation
 
 		public IntPtr GetForegroundWindowHandle()
 		{
-			return User32NativeMethods.GetForegroundWindow();
+			return PInvoke.GetForegroundWindow();
 		}
 
 		private void OnTimerEvent(object stateInfo)
@@ -97,48 +99,64 @@ namespace EveOPreview.Services.Implementation
 			IntPtr hProc;
 			IntPtr hWnd;
 
-			hProc = Process.GetCurrentProcess().Handle;
-			hWnd = Process.GetCurrentProcess().MainWindowHandle;
+			//hProc = Process.GetCurrentProcess().Handle;
+			//hWnd = Process.GetCurrentProcess().MainWindowHandle;
 
 
-			var count = User32NativeMethods.GetGuiResourcesGDICount(hProc);
-			var peak = User32NativeMethods.GetGuiResourcesGDICountPeak(hProc);
+			//var count = PInvoke.GetGuiResourcesGDICount(hProc);
+			//var peak = PInvoke.GetGuiResourcesGDICountPeak(hProc);
 
-			WriteToLog($"Process - GDIs: {count}. GDI peak: {peak}");
+			//WriteToLog($"Process - GDIs: {count}. GDI peak: {peak}");
 
-			count = User32NativeMethods.GetGuiResourcesGDICount(hWnd);
-			peak = User32NativeMethods.GetGuiResourcesGDICountPeak(hWnd);
-		    // WriteToLog($"MainWindow -  GDIs: {count} peak: {peak}");
+			//count = PInvoke.GetGuiResourcesGDICount(hWnd);
+			//peak = PInvoke.GetGuiResourcesGDICountPeak(hWnd);
+		 //   // WriteToLog($"MainWindow -  GDIs: {count} peak: {peak}");
 
 			var handleCount = Process.GetCurrentProcess().HandleCount;
 			WriteToLog($"Handle count: {handleCount}");
 		}
 
-		private void TurnOffAnimation()
+		private unsafe void TurnOffAnimation()
 		{
-			var currentAnimationSetup = User32NativeMethods.SystemParametersInfo(User32NativeMethods.SPI_GETANIMATION, (System.Int32)Marshal.SizeOf(typeof(ANIMATIONINFO)), ref _animationParam, 0);
-			if (_currentAnimationSetting == null)
+			var info = new ANIMATIONINFO();
+
+			var res = PInvoke.SystemParametersInfo(SYSTEM_PARAMETERS_INFO_ACTION.SPI_GETANIMATION, _animationParam.cbSize, Unsafe.AsPointer(ref _animationParam), 0);
+            if (!res)
+            {
+                WindowManager.WriteToLog($"{nameof(RestoreAnimation)} - ERR: SystemParametersInfo with SPI_SETANMIATION failed");
+            }
+
+            if (_currentAnimationSetting == null)
 			{
 				// Store the current Animation Setting
 				_currentAnimationSetting = _animationParam.iMinAnimate;
-			}
+                
+            }
 
-			if (currentAnimationSetup != NO_ANIMATION)
+			if (_animationParam.iMinAnimate != NO_ANIMATION)
 			{
 				// Turn off Animation
 				_animationParam.iMinAnimate = NO_ANIMATION;
-				var animationOffReturn = User32NativeMethods.SystemParametersInfo(User32NativeMethods.SPI_SETANIMATION, (System.Int32)Marshal.SizeOf(typeof(ANIMATIONINFO)), ref _animationParam, 0);
-			}
+				res = PInvoke.SystemParametersInfo(SYSTEM_PARAMETERS_INFO_ACTION.SPI_SETANIMATION, _animationParam.cbSize, Unsafe.AsPointer(ref _animationParam), 0);
+                if (!res)
+                {
+                    WindowManager.WriteToLog($"{nameof(RestoreAnimation)} - ERR: SystemParametersInfo with SPI_SETANMIATION failed");
+                }
+            }
 		}
 
-		private void RestoreAnimation()
+		private unsafe void RestoreAnimation()
 		{
-			var currentAnimationSetup = User32NativeMethods.SystemParametersInfo(User32NativeMethods.SPI_GETANIMATION, (System.Int32)Marshal.SizeOf(typeof(ANIMATIONINFO)), ref _animationParam, 0);
+			var currentAnimationSetup = PInvoke.SystemParametersInfo(SYSTEM_PARAMETERS_INFO_ACTION.SPI_GETANIMATION, _animationParam.cbSize, Unsafe.AsPointer(ref _animationParam), 0);
 			// Restore current Animation Settings
 			if (_animationParam.iMinAnimate != (int)_currentAnimationSetting)
 			{
 				_animationParam.iMinAnimate = (int)_currentAnimationSetting;
-				var animationResetReturn = User32NativeMethods.SystemParametersInfo(User32NativeMethods.SPI_SETANIMATION, (System.Int32)Marshal.SizeOf(typeof(ANIMATIONINFO)), ref _animationParam, 0);
+				var res = PInvoke.SystemParametersInfo(SYSTEM_PARAMETERS_INFO_ACTION.SPI_SETANIMATION, _animationParam.cbSize, Unsafe.AsPointer(ref _animationParam), 0);
+				if(!res)
+				{
+					WindowManager.WriteToLog($"{nameof(RestoreAnimation)} - ERR: SystemParametersInfo with SPI_SETANMIATION failed");
+				}
 			}
 		}
 
@@ -239,21 +257,21 @@ namespace EveOPreview.Services.Implementation
 #if WINDOWS
 		public void ActivateWindow(IntPtr handle, AnimationStyle animation)
 		{
-			User32NativeMethods.SetForegroundWindow(handle);
-			User32NativeMethods.SetFocus(handle);
+            PInvoke.SetForegroundWindow(new(handle));
+            PInvoke.SetFocus(new(handle));
 
-			int style = User32NativeMethods.GetWindowLong(handle, InteropConstants.GWL_STYLE);
+			int style = PInvoke.GetWindowLong(new(handle), WINDOW_LONG_PTR_INDEX.GWL_STYLE);
 
 			if ((style & InteropConstants.WS_MINIMIZE) == InteropConstants.WS_MINIMIZE)
 			{
 				switch (animation)
 				{
 					case AnimationStyle.OriginalAnimation:
-						User32NativeMethods.ShowWindowAsync(handle, InteropConstants.SW_RESTORE);
+                        PInvoke.ShowWindowAsync(new(handle), SHOW_WINDOW_CMD.SW_RESTORE);
 						break;
 					case AnimationStyle.NoAnimation:
 						TurnOffAnimation();
-						User32NativeMethods.ShowWindowAsync(handle, InteropConstants.SW_RESTORE);
+                        PInvoke.ShowWindowAsync(new(handle), SHOW_WINDOW_CMD.SW_RESTORE);
 						RestoreAnimation();
 						break;
 				}
@@ -267,11 +285,11 @@ namespace EveOPreview.Services.Implementation
 				switch (animation)
 				{
 					case AnimationStyle.OriginalAnimation:
-						User32NativeMethods.SendMessage(handle, InteropConstants.WM_SYSCOMMAND, InteropConstants.SC_MINIMIZE, 0);
+                        PInvoke.SendMessage(new(handle), InteropConstants.WM_SYSCOMMAND, InteropConstants.SC_MINIMIZE, 0);
 						break;
 					case AnimationStyle.NoAnimation:
 						TurnOffAnimation();
-						User32NativeMethods.SendMessage(handle, InteropConstants.WM_SYSCOMMAND, InteropConstants.SC_MINIMIZE, 0);
+                        PInvoke.SendMessage(new(handle), InteropConstants.WM_SYSCOMMAND, InteropConstants.SC_MINIMIZE, 0);
 						RestoreAnimation();
 						break;
 				}
@@ -281,21 +299,20 @@ namespace EveOPreview.Services.Implementation
 				switch (animation)
 				{
 					case AnimationStyle.OriginalAnimation:
-						WINDOWPLACEMENT param = new WINDOWPLACEMENT();
-						param.length = Marshal.SizeOf(typeof(WINDOWPLACEMENT));
+						WINDOWPLACEMENT param = new();
 
-						if (!User32NativeMethods.GetWindowPlacement(handle, ref param))
+						if (!PInvoke.GetWindowPlacement(new(handle), ref param))
 						{
-							WriteToLog($"{nameof(MinimizeWindow)} - {nameof(User32NativeMethods.GetWindowPlacement)} returned NULL");
+							WriteToLog($"{nameof(MinimizeWindow)} - {nameof(PInvoke.GetWindowPlacement)} returned NULL");
 
 							return;
 						}
 
-						param.showCmd = WINDOWPLACEMENT.SW_MINIMIZE;
+						param.showCmd = SHOW_WINDOW_CMD.SW_MINIMIZE;
 						
-						if (!User32NativeMethods.SetWindowPlacement(handle, ref param))
+						if (!PInvoke.SetWindowPlacement(new(handle), ref param))
 						{
-							WriteToLog($"{nameof(MinimizeWindow)} - {nameof(User32NativeMethods.SetWindowPlacement)} returned NULL");
+							WriteToLog($"{nameof(MinimizeWindow)} - {nameof(PInvoke.SetWindowPlacement)} returned NULL");
 
 							return;
 						}
@@ -303,7 +320,7 @@ namespace EveOPreview.Services.Implementation
 						break;
 					case AnimationStyle.NoAnimation:
 						TurnOffAnimation();
-						User32NativeMethods.SendMessage(handle, InteropConstants.WM_SYSCOMMAND, InteropConstants.SC_MINIMIZE, 0);
+                        PInvoke.SendMessage(new(handle), InteropConstants.WM_SYSCOMMAND, InteropConstants.SC_MINIMIZE, 0);
 						RestoreAnimation();
 						break;
 				}
@@ -313,12 +330,12 @@ namespace EveOPreview.Services.Implementation
 
 		public void MoveWindow(IntPtr handle, int left, int top, int width, int height)
 		{
-			User32NativeMethods.MoveWindow(handle, left, top, width, height, true);
+            PInvoke.MoveWindow(new(handle), left, top, width, height, true);
 		}
 
 		public void MaximizeWindow(IntPtr handle)
 		{
-			User32NativeMethods.ShowWindowAsync(handle, InteropConstants.SW_SHOWMAXIMIZED);
+            PInvoke.ShowWindowAsync(new(handle), Windows.Win32.UI.WindowsAndMessaging.SHOW_WINDOW_CMD.SW_SHOWMAXIMIZED);
         }
 
 		public (int Left, int Top, int Right, int Bottom) GetWindowPosition(IntPtr handle)
@@ -336,12 +353,12 @@ namespace EveOPreview.Services.Implementation
 
 		public bool IsWindowMaximized(IntPtr handle)
 		{
-			return User32NativeMethods.IsZoomed(handle);
+			return PInvoke.IsZoomed(new(handle));
 		}
 
 		public bool IsWindowMinimized(IntPtr handle)
 		{
-			return User32NativeMethods.IsIconic(handle);
+			return PInvoke.IsIconic(new(handle));
 		}
 
 		public IDwmThumbnail GetLiveThumbnail(IntPtr destination, IntPtr source)
