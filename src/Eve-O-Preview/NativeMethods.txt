@@ -1,0 +1,11 @@
+GetCursorPos
+SelectObject
+DeleteDC
+ReleaseDC
+BitBlt
+DeleteObject
+CreateCompatibleBitmap
+CreateCompatibleDC
+GetClientRect
+GetDC
+GetWindowRect

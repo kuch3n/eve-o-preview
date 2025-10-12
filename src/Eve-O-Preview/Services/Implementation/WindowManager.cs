@@ -8,6 +8,9 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
 using System.Windows.Media.Media3D;
+using Windows.Win32;
+using Windows.Win32.Foundation;
+using Windows.Win32.Graphics.Gdi;
 
 namespace EveOPreview.Services.Implementation
 {
@@ -320,15 +323,15 @@ namespace EveOPreview.Services.Implementation
 
 		public (int Left, int Top, int Right, int Bottom) GetWindowPosition(IntPtr handle)
 		{
-			IntPtr res = User32NativeMethods.GetWindowRect(handle, out RECT windowRectangle);
+			IntPtr res = PInvoke.GetWindowRect(new(handle), out RECT windowRectangle);
 			if (res == IntPtr.Zero)
 			{
-				WriteToLog($"{nameof(GetWindowPosition)} - {nameof(User32NativeMethods.GetWindowRect)} returned NULL");
+				WriteToLog($"{nameof(GetWindowPosition)} - {nameof(PInvoke.GetWindowRect)} returned NULL");
 
 				return (0, 0, 0, 0);
 			}
 
-			return (windowRectangle.Left, windowRectangle.Top, windowRectangle.Right, windowRectangle.Bottom);
+			return (windowRectangle.left, windowRectangle.top, windowRectangle.right, windowRectangle.bottom);
 		}
 
 		public bool IsWindowMaximized(IntPtr handle)
@@ -351,41 +354,45 @@ namespace EveOPreview.Services.Implementation
 
 		public Image GetStaticThumbnail(IntPtr source)
 		{
-			const int HGDI_ERROR = 65535;
-            const int SM_XVIRTUALSCREEN = 76;
-			const int SM_YVIRTUALSCREEN = 77;
-			const int SM_CXVIRTUALSCREEN = 78;
-			const int SM_CYVIRTUALSCREEN = 79;
+			// https://stackoverflow.com/questions/15870591/why-does-createcompatiblebitmap-fail-after-about-a-thousand-executions
+			HWND hWnd = new(source);
+			var hWindowDC = PInvoke.GetDC(hWnd);
 
-            int x = User32NativeMethods.GetSystemMetrics(SM_XVIRTUALSCREEN);
-            int y = User32NativeMethods.GetSystemMetrics(SM_YVIRTUALSCREEN);
-            int w = User32NativeMethods.GetSystemMetrics(SM_CXVIRTUALSCREEN);
-            int h = User32NativeMethods.GetSystemMetrics(SM_CYVIRTUALSCREEN);
+			PInvoke.GetClientRect(hWnd, out RECT rect);
 
-			Rectangle screenBounds = new(x, y, w, h);
+            var width = rect.right - rect.left;
+            var height = rect.bottom - rect.top;
 
-            RECT windowRect;
-            if (User32NativeMethods.GetWindowRect(source, out windowRect) == IntPtr.Zero)
-			{
-                return null;
-            }
-                
-            Rectangle windowBounds = new Rectangle(windowRect.Left, windowRect.Top, windowRect.Right - windowRect.Left, windowRect.Bottom - windowRect.Top);
-            Rectangle intersection = Rectangle.Intersect(screenBounds, windowBounds);
-            if (intersection.IsEmpty)
-			{
-                return null;
-            }
-                
-            Bitmap screenshot = new Bitmap(intersection.Width, intersection.Height);
-            using (Graphics g = Graphics.FromImage(screenshot))
+            // Check if there is anything to make thumbnail of
+            if ((width < WINDOW_SIZE_THRESHOLD) || (height < WINDOW_SIZE_THRESHOLD))
             {
-                IntPtr hdc = g.GetHdc();
-                User32NativeMethods.PrintWindow(source, hdc, 3);
-                g.ReleaseHdc(hdc);
+                return null;
             }
 
-            return screenshot;
-		}
+            var hWindowCompDC = PInvoke.CreateCompatibleDC(hWindowDC);
+            // Gdi32NativeMethods.SetStretchBltMode(hWindowCompDC, COLORONCOLOR);
+
+			// Create bitmap
+            var hBmp = PInvoke.CreateCompatibleBitmap(hWindowDC, width, height);
+
+			// Save old bitmap
+            var hOldBmp = PInvoke.SelectObject(hWindowCompDC, hBmp); //copy from hwindowCompatibleDC to hbwindow
+            if(!PInvoke.BitBlt(hWindowCompDC, 0, 0, width, height, hWindowDC, 0, 0, ROP_CODE.SRCCOPY))
+			{
+				WriteToLog($"{GetStaticThumbnail} - BitBlt failed");
+			}
+
+            // Restore old bitmap
+            PInvoke.SelectObject(hWindowCompDC, hOldBmp);
+            PInvoke.DeleteDC(hWindowCompDC);
+            PInvoke.ReleaseDC(hWnd, hWindowDC);
+
+            Image image = Image.FromHbitmap(hBmp);
+            PInvoke.DeleteObject(hBmp);
+
+			// image.Save("asdf.bmp");
+
+            return image;
+        }
 	}
 }

@@ -34,12 +34,6 @@ namespace EveOPreview.Services.Interop
 		[DllImport("user32.dll", SetLastError = true)]
 		public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
 
-		[DllImport("user32.dll")]
-		public static extern int GetWindowRect(IntPtr hWnd, out RECT rect);
-
-		[DllImport("user32.dll")]
-		public static extern bool GetClientRect(IntPtr hWnd, out RECT rect);
-
 		[DllImport("user32.dll", SetLastError = true)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		public static extern bool GetWindowPlacement(IntPtr hWnd, ref WINDOWPLACEMENT lpwndpl);
@@ -90,6 +84,5 @@ namespace EveOPreview.Services.Interop
 
 		[DllImport("user32.dll")]
 		public static extern bool PrintWindow(IntPtr hwnd, IntPtr hdcBlt, uint flags);
-
     }
 }

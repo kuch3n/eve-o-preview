@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using EveOPreview.Services.Interop;
+using Windows.Win32;
 
 namespace EveOPreview.Services.Implementation
 {
@@ -76,7 +77,7 @@ namespace EveOPreview.Services.Implementation
 
 		public void Move(int left, int top, int right, int bottom)
 		{
-			this._properties.rcDestination = new RECT(left, top, right, bottom);
+			this._properties.rcDestination = new System.Windows.Rect(left, top, right, bottom);
 		}
 
 		public void Update()

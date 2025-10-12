@@ -24,5 +24,8 @@ namespace EveOPreview.Services.Interop
 
 		[DllImport("gdi32.dll")]
 		public static extern bool BitBlt(IntPtr hObject, int nXDest, int nYDest, int nWidth, int nHeight, IntPtr hObjectSource, int nXSrc, int nYSrc, int dwRop);
-	}
+		[DllImport("gdi32.dll")]
+		public static extern int SetStretchBltMode(IntPtr hdc, int mode);
+
+    }
 }

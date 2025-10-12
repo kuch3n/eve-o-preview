@@ -40,6 +40,7 @@ namespace EveOPreview.View
 			{
 				var oldImage = this._thumbnail.Image;
 				this._thumbnail.Image = thumbnail;
+				this._thumbnail.Refresh();
 				oldImage?.Dispose();
 			}
 		}

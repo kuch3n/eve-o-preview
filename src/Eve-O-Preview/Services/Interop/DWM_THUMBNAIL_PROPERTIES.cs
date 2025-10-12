@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Windows;
 
 namespace EveOPreview.Services.Interop
 {
@@ -6,8 +7,8 @@ namespace EveOPreview.Services.Interop
 	class DWM_THUMBNAIL_PROPERTIES
 	{
 		public uint dwFlags;
-		public RECT rcDestination;
-		public RECT rcSource;
+		public Rect rcDestination;
+		public Rect rcSource;
 		public byte opacity;
 		[MarshalAs(UnmanagedType.Bool)]
 		public bool fVisible;

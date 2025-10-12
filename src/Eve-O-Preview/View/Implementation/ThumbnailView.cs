@@ -10,6 +10,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 using System.Windows.Threading;
+using Windows.Win32;
 using Impl = EveOPreview.Services.Implementation;
 
 namespace EveOPreview.View
@@ -31,8 +32,6 @@ namespace EveOPreview.View
 		private bool _isHighlightEnabled;
 		private bool _isHighlightRequested;
 		private int _highlightWidth;
-
-		private bool _isLocationChanged;
 
 		private bool _isCustomMouseModeActive;
 
@@ -63,6 +62,18 @@ namespace EveOPreview.View
             }
         }
 
+		private Point newLoc;
+		private Point NewLoc
+		{
+			get { return newLoc; }
+			set
+			{
+				newLoc = value;
+				Notify();
+			}
+		}
+
+
         public event PropertyChangedEventHandler PropertyChanged;
         #endregion
 
@@ -81,8 +92,6 @@ namespace EveOPreview.View
 			this._isHighlightEnabled = false;
 			this._isHighlightRequested = false;
 
-			this._isLocationChanged = true;
-
 			this._isCustomMouseModeActive = false;
 
 			this._opacity = 0.1;
@@ -93,7 +102,10 @@ namespace EveOPreview.View
 
 			SetDefaultBorderColor();
 			this._thumbnailManager = thumbnailManager;
-		}
+
+			this.PropertyChanged = OnPropertyChanged;
+
+        }
 
 		public IWindowManager WindowManager { get; }
 
@@ -180,7 +192,6 @@ namespace EveOPreview.View
 
 			base.Show();
 
-			this._isLocationChanged = true;
 			this._isOverlayVisible = false;
 
 			this.Refresh(true);
@@ -411,11 +422,10 @@ namespace EveOPreview.View
             }
 
 			bool sizeChanged = newSize != Size;
+			
 			this.RefreshThumbnail(forceRefresh);
-			this.HighlightThumbnail(forceRefresh || newSize != Size);
-			this.RefreshOverlay(forceRefresh || sizeChanged || this._isLocationChanged);
-
-            sizeChanged = false;
+			this.HighlightThumbnail(forceRefresh || sizeChanged);
+			this.RefreshOverlay(forceRefresh || sizeChanged);
 		}
 
 		protected abstract void RefreshThumbnail(bool forceRefresh);
@@ -481,7 +491,6 @@ namespace EveOPreview.View
 			overlayLocation.X += borderWidth;
 			overlayLocation.Y += (this.Size.Height - this.ClientSize.Height) - borderWidth;
 
-			this._isLocationChanged = false;
 			this._overlay.Size = overlaySize;
 
 			this._overlay.SetPropertiesOverlayLabel(_config.OverlayLabelSize, _config.OverlayLabelColor, _config.OverlayLabelAnchor);
@@ -511,7 +520,6 @@ namespace EveOPreview.View
 
 		private void Move_Handler(object sender, EventArgs e)
 		{
-			this._isLocationChanged = true;
 			this.ThumbnailMoved?.Invoke(this.Id);
 		}
 
@@ -525,7 +533,7 @@ namespace EveOPreview.View
 
 			NewSize = Size;
 
-			// this.ThumbnailResized?.Invoke(this.Id);
+			this.ThumbnailResized?.Invoke(this.Id);
 		}
 
 		private void MouseEnter_Handler(object sender, EventArgs e)
@@ -562,17 +570,7 @@ namespace EveOPreview.View
 			{
 				this.ExitCustomMouseMode();
 
-				// Snap to Grid on release of mouse (if moved)
-				if (_config.ThumbnailSnapToGrid && this.WindowMoved)
-				{
-					var x = (int)Math.Round((double)this.Location.X / (double)_config.ThumbnailSnapToGridSizeX) * _config.ThumbnailSnapToGridSizeX;
-                    var y = (int)Math.Round((double)this.Location.Y / (double)_config.ThumbnailSnapToGridSizeY) * _config.ThumbnailSnapToGridSizeY;
-					this.Location = new Point(x, y);
-					this._baseZoomLocation = this.Location;
-
-					this.WindowMoved = false;
-
-                }
+                Location = SnapToGrid(Location);
 			}
 		}
 
@@ -620,10 +618,17 @@ namespace EveOPreview.View
 
 		private void ProcessCustomMouseMode(bool leftButton, bool rightButton)
 		{
-			Point mousePos = Control.MousePosition;
+			Point mousePos;
 
-			// Avoid race conditions by calculating thumbnail location directly instead of using the safed location from "last" event
-			int w = this.Size.Width;
+			if(!PInvoke.GetCursorPos(out mousePos))
+			{
+				Impl.WindowManager.WriteToLog($"{nameof(ProcessCustomMouseMode)} - Failed to get cursor position");
+
+				mousePos = Control.MousePosition;
+            }
+
+            // Avoid race conditions by calculating thumbnail location directly instead of using the safed location from "last" event
+            int w = this.Size.Width;
 			int h = this.Size.Height;
 
 			int centerX = w / 2;
@@ -663,9 +668,8 @@ namespace EveOPreview.View
 					newX = Math.Max(0, newX);
 					newY = Math.Max(0, newY);
 
-					this.Location = new Point(newX, newY);
-					this._baseZoomLocation = this.Location;
-					this.WindowMoved = true;
+                    NewLoc = new Point(newX, newY);
+
 
       //              Impl.WindowManager.WriteToLog($"{nameof(ProcessCustomMouseMode)}" +
       //                  $"\n\t Mouse  - x: {mousePos.X,5} y: {mousePos.Y,5}" +
@@ -676,6 +680,37 @@ namespace EveOPreview.View
                 }
 
             }
+        }
+
+		private Point SnapToGrid(Point location)
+		{
+			if(!_config.ThumbnailSnapToGrid)
+			{
+				return location;
+			}
+
+
+			var x = (int)Math.Round((double)this.Location.X / (double)_config.ThumbnailSnapToGridSizeX) * _config.ThumbnailSnapToGridSizeX;
+			var y = (int)Math.Round((double)this.Location.Y / (double)_config.ThumbnailSnapToGridSizeY) * _config.ThumbnailSnapToGridSizeY;
+				
+				
+			return  new Point(x, y);
+			
+		}
+
+		private void OnPropertyChanged(object o, PropertyChangedEventArgs e)
+		{
+			switch(e.PropertyName)
+			{
+				default:
+					return;
+				case nameof(NewLoc):
+                    this.WindowMoved = true;
+                    this._baseZoomLocation = NewLoc;
+					this.Location = NewLoc;
+
+                    break;
+			}
 		}
 
 		private void ExitCustomMouseMode()
