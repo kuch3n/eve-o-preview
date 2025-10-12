@@ -164,14 +164,14 @@ namespace EveOPreview.Services.Implementation
 #if LINUX
 		private void WindowsActivateWindow(IntPtr handle)
 		{
-			User32NativeMethods.SetForegroundWindow(handle);
-			User32NativeMethods.SetFocus(handle);
+			PInvoke.SetForegroundWindow((HWND)handle);
+            PInvoke.SetFocus((HWND)handle);
 
-			int style = User32NativeMethods.GetWindowLong(handle, InteropConstants.GWL_STYLE);
+			int style = PInvoke.GetWindowLong((HWND)handle, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
 
 			if ((style & InteropConstants.WS_MINIMIZE) == InteropConstants.WS_MINIMIZE)
 			{
-				User32NativeMethods.ShowWindowAsync(handle, InteropConstants.SW_RESTORE);
+                PInvoke.ShowWindowAsync((HWND)handle, SHOW_WINDOW_CMD.SW_RESTORE);
 			}
 		}
 
@@ -236,19 +236,19 @@ namespace EveOPreview.Services.Implementation
             }
         }
 
-        public void MinimizeWindow(IntPtr handle, bool enableAnimation)
+        public unsafe void MinimizeWindow(IntPtr handle, bool enableAnimation)
 		{
 			if (enableAnimation)
 			{
-				User32NativeMethods.SendMessage(handle, InteropConstants.WM_SYSCOMMAND, InteropConstants.SC_MINIMIZE, 0);
+                PInvoke.SendMessage((HWND)handle, InteropConstants.WM_SYSCOMMAND, InteropConstants.SC_MINIMIZE, 0);
 			}
 			else
 			{
 				WINDOWPLACEMENT param = new WINDOWPLACEMENT();
-				param.length = Marshal.SizeOf(typeof(WINDOWPLACEMENT));
-				User32NativeMethods.GetWindowPlacement(handle, ref param);
-				param.showCmd = WINDOWPLACEMENT.SW_MINIMIZE;
-				User32NativeMethods.SetWindowPlacement(handle, ref param);
+				param.length = (uint)Marshal.SizeOf(param);
+                PInvoke.GetWindowPlacement((HWND)handle, ref param);
+				param.showCmd = SHOW_WINDOW_CMD.SW_MINIMIZE;
+                PInvoke.SetWindowPlacement((HWND)handle, in param);
 			}
 		}
 
