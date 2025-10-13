@@ -76,7 +76,7 @@ namespace EveOPreview.Services.Implementation
 			try
 			{
 				Trace.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] " + message);
-				File.AppendAllText(EXCEPTION_DUMP_FILE_NAME, $"[{DateTime.Now}] " + message + Environment.NewLine);
+				File.AppendAllText(EXCEPTION_DUMP_FILE_NAME, $"[{DateTime.Now.ToString("HH:mm:ss.fff")}] " + message + Environment.NewLine);
 			}
 			catch (Exception ex)
 			{
