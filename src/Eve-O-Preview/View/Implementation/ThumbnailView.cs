@@ -416,11 +416,11 @@ namespace EveOPreview.View
 		{
 			if(forceRefresh)
 			{
-                Impl.WindowManager.WriteToLog($"{nameof(Refresh)} - forced");
+                //Impl.WindowManager.WriteToLog($"{nameof(Refresh)} - forced");
             }
 			else
 			{
-                Impl.WindowManager.WriteToLog($"{nameof(Refresh)}");
+                //Impl.WindowManager.WriteToLog($"{nameof(Refresh)}");
             }
 
 			bool sizeChanged = newSize != Size;
@@ -656,11 +656,11 @@ namespace EveOPreview.View
 
 					NewSize = new Size(sizeX, sizeY);
 
-      //              Impl.WindowManager.WriteToLog($"{nameof(ProcessCustomMouseMode)}" +
-						//$"\n\t Mouse  - x: {mousePos.X,5} y: {mousePos.Y,5}" +
-						//$"\n\t Dist   - x: {sizeX,5} y: {sizeY,5}" +
-						//$"\n\t Center - x: {centerX,5} y: {centerY,5}" +
-						//$"\n\t Size   - w: {w,5} h: {h,5}");
+                   Impl.WindowManager.WriteToLog($"{nameof(ProcessCustomMouseMode)}:" +
+						$"\t Mouse : x: {mousePos.X,5} y: {mousePos.Y,5}" +
+						$"\t Dist  : x: {sizeX,5} y: {sizeY,5}" +
+						$"\t Center: x: {centerX,5} y: {centerY,5}" +
+						$"\t Size  : w: {w,5} h: {h,5}");
                 }
 				else
 				{
@@ -673,12 +673,12 @@ namespace EveOPreview.View
                     NewLoc = new Point(newX, newY);
 
 
-      //              Impl.WindowManager.WriteToLog($"{nameof(ProcessCustomMouseMode)}" +
-      //                  $"\n\t Mouse  - x: {mousePos.X,5} y: {mousePos.Y,5}" +
-      //                  $"\n\t New    - x: {newX,5} y: {newY,5}" +
-      //                  $"\n\t Center - x: {centerX,5} y: {centerY,5}" +
-      //                  $"\n\t Size   - w: {w,5} h: {h,5}" +
-						//$"\n\t Delta  - x: {deltaX,5} y: {deltaY,5}");
+                   Impl.WindowManager.WriteToLog($"{nameof(ProcessCustomMouseMode)}" +
+                       $"\t Mouse : x: {mousePos.X,5} y: {mousePos.Y,5}" +
+                       $"\t New   : x: {newX,5} y: {newY,5}" +
+                       $"\t Center: x: {centerX,5} y: {centerY,5}" +
+                       $"\t Size  : w: {w,5} h: {h,5}" +
+					   $"\t Delta : x: {deltaX,5} y: {deltaY,5}");
                 }
 
             }

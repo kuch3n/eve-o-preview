@@ -374,11 +374,11 @@ namespace EveOPreview.Services
 
 			if ((viewsAdded.Count > 0) || (viewsRemoved.Count > 0))
 			{
-                Impl.WindowManager.WriteToLog($"{nameof(UpdateThumbnailsList)} - await {nameof(ThumbnailListUpdated)}");
+                // Impl.WindowManager.WriteToLog($"{nameof(UpdateThumbnailsList)} - await {nameof(ThumbnailListUpdated)}");
                 await this._mediator.Publish(new ThumbnailListUpdated(viewsAdded, viewsRemoved));
 			}
 
-            Impl.WindowManager.WriteToLog($"{nameof(UpdateThumbnailsList)} - Exit");
+            // Impl.WindowManager.WriteToLog($"{nameof(UpdateThumbnailsList)} - Exit");
         }
 
 		private void RefreshThumbnails()
@@ -398,7 +398,7 @@ namespace EveOPreview.Services
 
 			if (_thumbnailViews.Any(x => x.Value.IsCustomMouseMode))
 			{
-                WindowManager.WriteToLog($"{nameof(UpdateThumbnailsList)} - Skipping");
+                // WindowManager.WriteToLog($"{nameof(UpdateThumbnailsList)} - Skipping");
                 return;
 			}
 
@@ -727,7 +727,7 @@ namespace EveOPreview.Services
 				return false;
 			}
 
-			WindowManager.WriteToLog($"{nameof(IsClientWindowActive)} - {nameof(_thumbnailViews)}: {_thumbnailViews.Count}");
+			// WindowManager.WriteToLog($"{nameof(IsClientWindowActive)} - {nameof(_thumbnailViews)}: {_thumbnailViews.Count}");
 
 			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
 			{
@@ -917,7 +917,7 @@ namespace EveOPreview.Services
 
 		private void EnqueueLocationChange(IThumbnailView view)
 		{
-			WindowManager.WriteToLog(nameof(EnqueueLocationChange));
+			// WindowManager.WriteToLog(nameof(EnqueueLocationChange));
 
 			string activeClientTitle = this._activeClient.Title;
 			// TODO ??
