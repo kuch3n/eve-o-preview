@@ -396,6 +396,12 @@ namespace EveOPreview.Services
 
 			string foregroundWindowTitle = null;
 
+			if (_thumbnailViews.Any(x => x.Value.IsCustomMouseMode))
+			{
+                WindowManager.WriteToLog($"{nameof(UpdateThumbnailsList)} - Skipping");
+                return;
+			}
+
 			// Check if the foreground window handle is one of the known handles for client windows or their thumbnails
 			bool isClientWindow = this.IsClientWindowActive(foregroundWindowHandle);
 			bool isMainWindowActive = this.IsMainWindowActive(foregroundWindowHandle);

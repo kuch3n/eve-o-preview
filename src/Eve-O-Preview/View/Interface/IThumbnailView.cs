@@ -13,6 +13,7 @@ namespace EveOPreview.View
 		string Title { get; set; }
 
 		bool IsActive { get; set; }
+		bool IsCustomMouseMode { get; }
 		Point ThumbnailLocation { get; set; }
 		Size ThumbnailSize { get; set; }
 		bool IsOverlayEnabled { get; set; }

@@ -73,6 +73,8 @@ namespace EveOPreview.View
 			}
 		}
 
+		public bool IsCustomMouseMode => _isCustomMouseModeActive;
+
 
         public event PropertyChangedEventHandler PropertyChanged;
         #endregion
