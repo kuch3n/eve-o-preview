@@ -294,7 +294,7 @@ namespace EveOPreview.Services.Implementation
 
 		public Image GetStaticThumbnail(IntPtr source)
 		{
-			var sourceContext = User32NativeMethods.GetDC(source);
+            var sourceContext = User32NativeMethods.GetDC(source);
 
 			User32NativeMethods.GetClientRect(source, out RECT windowRect);
 
@@ -304,13 +304,14 @@ namespace EveOPreview.Services.Implementation
 			// Check if there is anything to make thumbnail of
 			if ((width < WINDOW_SIZE_THRESHOLD) || (height < WINDOW_SIZE_THRESHOLD))
 			{
-				return null;
+                User32NativeMethods.ReleaseDC(source, sourceContext);
+
+                return null;
 			}
 
-			var destContext = Gdi32NativeMethods.CreateCompatibleDC(sourceContext);
+            var destContext = Gdi32NativeMethods.CreateCompatibleDC(sourceContext);
 			var bitmap = Gdi32NativeMethods.CreateCompatibleBitmap(sourceContext, width, height);
-
-			var oldBitmap = Gdi32NativeMethods.SelectObject(destContext, bitmap);
+            var oldBitmap = Gdi32NativeMethods.SelectObject(destContext, bitmap);
 			Gdi32NativeMethods.BitBlt(destContext, 0, 0, width, height, sourceContext, 0, 0, Gdi32NativeMethods.SRCCOPY);
 			Gdi32NativeMethods.SelectObject(destContext, oldBitmap);
 			Gdi32NativeMethods.DeleteDC(destContext);
@@ -319,7 +320,7 @@ namespace EveOPreview.Services.Implementation
 			Image image = Image.FromHbitmap(bitmap);
 			Gdi32NativeMethods.DeleteObject(bitmap);
 
-			return image;
+            return image;
 		}
-	}
+    }
 }
